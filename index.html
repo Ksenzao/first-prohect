@@ -37,6 +37,7 @@
         }
 
         .container {
+            position: relative;
             max-width: 750px;
             width: 100%;
             background: rgba(30, 41, 59, 0.7);
@@ -47,6 +48,42 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             text-align: center;
+        }
+
+        /* Переключатель языков */
+        .lang-switch-wrapper {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .lang-btn:hover {
+            color: #ffffff;
+        }
+
+        .lang-btn.active {
+            background: #6366f1;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
         }
 
         .avatar-wrapper {
@@ -371,6 +408,10 @@
             .container {
                 padding: 30px 20px;
             }
+            .lang-switch-wrapper {
+                top: 15px;
+                right: 15px;
+            }
             .contacts-container, .project-grid {
                 grid-template-columns: 1fr;
             }
@@ -382,12 +423,18 @@
 </head>
 <body>
     <div class="container">
+        <!-- Свитчер языков -->
+        <div class="lang-switch-wrapper">
+            <button class="lang-btn active" id="btn-ru" onclick="switchLang('ru')">RU</button>
+            <button class="lang-btn" id="btn-en" onclick="switchLang('en')">EN</button>
+        </div>
+
         <div class="avatar-wrapper">
             <img src="avatar.jpg" alt="Илья Ксензов" class="profile-img">
         </div>
         
-        <h1>Илья Ксензов</h1>
-        <div class="subtitle">IT-специалист / Веб-разработчик</div>
+        <h1 data-i18n="name">Илья Ксензов</h1>
+        <div class="subtitle" data-i18n="role">IT-специалист / Веб-разработчик</div>
         
         <!-- Кнопки контактов -->
         <div class="contacts-container">
@@ -402,16 +449,16 @@
             </a>
         </div>
 
-        <h2>Обо мне</h2>
-        <p>Опытный IT-профессионал, сочетающий <span class="highlight">Project Management</span> и <span class="highlight">ITSM</span>. Реализованные инициативы привели к <span class="highlight">сокращению времени простоя на 80%</span> и <span class="highlight">повышению производительности команды на 93%</span>.</p>
+        <h2 data-i18n="aboutTitle">Обо мне</h2>
+        <p data-i18n="aboutText">Опытный IT-профессионал, сочетающий <span class="highlight">Project Management</span> и <span class="highlight">ITSM</span>. Реализованные инициативы привели к <span class="highlight">сокращению времени простоя на 80%</span> и <span class="highlight">повышению производительности команды на 93%</span>.</p>
         
-        <h2>Образование</h2>
+        <h2 data-i18n="eduTitle">Образование</h2>
         <ul class="info-list">
-            <li>Академия управления при Президенте РБ | Гос. управление и право</li>
-            <li>БГУФК | Менеджмент спортивной индустрии</li>
+            <li data-i18n="edu1">Академия управления при Президенте РБ | Гос. управление и право</li>
+            <li data-i18n="edu2">БГУФК | Менеджмент спортивной индустрии</li>
         </ul>
         
-        <h2>Навыки</h2>
+        <h2 data-i18n="skillsTitle">Навыки</h2>
         <div class="skill-category-title">Management & Methodologies</div>
         <ul class="skills-list">
             <li>Project Management</li>
@@ -435,44 +482,44 @@
             <li>Git/GitHub</li>
             <li>CI/CD</li>
             <li>AWS</li>
-            <li>SQL (Postgres, mySql, Oracle)</li>
+            <li>SQL (Postgres, MySQL, Oracle)</li>
         </ul>
 
-        <!-- Секция Проекты (передвинута вниз) -->
-        <h2>Проекты <span class="projects-count">(5 projects)</span></h2>
+        <!-- Секция Проекты -->
+        <h2 data-i18n="projectsTitle">Проекты <span class="projects-count" data-i18n="projectsCount">(5 проектов)</span></h2>
         <div class="projects-list">
             <details>
                 <summary>AtRest_Support</summary>
                 <div class="project-content">
                     <div class="project-grid">
                         <div class="field-group">
-                            <span class="field-label">Project name</span>
+                            <span class="field-label" data-i18n="lblProjName">Project name</span>
                             <span class="field-value">AtRest_Support</span>
                         </div>
                         <div class="field-group">
-                            <span class="field-label">Duration</span>
-                            <span class="field-value">🗓️ Nov 2025 - till now</span>
+                            <span class="field-label" data-i18n="lblDuration">Duration</span>
+                            <span class="field-value" data-i18n="p1Duration">🗓️ Нояб 2025 - по наст. время</span>
                         </div>
                     </div>
 
                     <div class="project-section">
-                        <span class="field-label">Description</span>
-                        <p>The platform provides information about the deceased, including funeral dates, burial locations, and memorial messages from family and friends. It also helps users find details about upcoming funerals and ceremonies, making it an important resource that supports the Irish community in commemorating their loved ones. The project requires reliable post-launch support focused on regular maintenance and user assistance. Our support model combines consistent maintenance and expert consultation, ensuring both the technical stability and functional usability of the WordPress-based system.</p>
+                        <span class="field-label" data-i18n="lblDesc">Description</span>
+                        <p data-i18n="p1Desc">Платформа предоставляет информацию об ушедших из жизни, включая даты похорон, места захоронений и поминальные сообщения от семьи и друзей. Она также помогает пользователям находить информацию о предстоящих церемониях, являясь важным ресурсом поддержки сообщества. Проект требует надежной пост-релизной поддержки, сфокусированной на регулярном обслуживании и помощи пользователям. Наша модель сочетает техническую стабильность и функциональное удобство системы на базе WordPress.</p>
                     </div>
 
                     <div class="project-grid">
                         <div class="field-group">
-                            <span class="field-label">Team</span>
-                            <span class="field-value">6 members</span>
+                            <span class="field-label" data-i18n="lblTeam">Team</span>
+                            <span class="field-value" data-i18n="p1Team">6 участников</span>
                         </div>
                         <div class="field-group">
-                            <span class="field-label">Position</span>
+                            <span class="field-label" data-i18n="lblPosition">Position</span>
                             <span class="field-value">ITSM manager</span>
                         </div>
                     </div>
 
                     <div class="project-section">
-                        <span class="field-label">Responsibilities</span>
+                        <span class="field-label" data-i18n="lblResp">Responsibilities</span>
                         <ul class="resp-list">
                             <li>Service Operations & Support</li>
                             <li>Incident Management</li>
@@ -488,7 +535,7 @@
                     </div>
 
                     <div class="project-section">
-                        <span class="field-label">Technologies and tools</span>
+                        <span class="field-label" data-i18n="lblTech">Technologies and tools</span>
                         <div class="tech-tags">Wordpress, Atlassian, Jira Service Desk, Business Analysis, Figma, Communication Skills</div>
                     </div>
                 </div>
@@ -499,17 +546,17 @@
                 <div class="project-content">
                     <div class="project-grid">
                         <div class="field-group">
-                            <span class="field-label">Project name</span>
+                            <span class="field-label" data-i18n="lblProjName">Project name</span>
                             <span class="field-value">Urban Smile Support</span>
                         </div>
                         <div class="field-group">
-                            <span class="field-label">Position</span>
+                            <span class="field-label" data-i18n="lblPosition">Position</span>
                             <span class="field-value">ITSM Manager</span>
                         </div>
                     </div>
                     <div class="project-section">
-                        <span class="field-label">Description</span>
-                        <p>Поддержка и сопровождение клиентских сервисов сетевых медицинских клиник. Сокращение времени обработки обращений и внедрение базы знаний (Confluence).</p>
+                        <span class="field-label" data-i18n="lblDesc">Description</span>
+                        <p data-i18n="p2Desc">Поддержка и сопровождение клиентских сервисов сетевых медицинских клиник. Сокращение времени обработки обращений и внедрение базы знаний (Confluence).</p>
                     </div>
                 </div>
             </details>
@@ -519,17 +566,17 @@
                 <div class="project-content">
                     <div class="project-grid">
                         <div class="field-group">
-                            <span class="field-label">Project name</span>
+                            <span class="field-label" data-i18n="lblProjName">Project name</span>
                             <span class="field-value">Dimaex</span>
                         </div>
                         <div class="field-group">
-                            <span class="field-label">Position</span>
+                            <span class="field-label" data-i18n="lblPosition">Position</span>
                             <span class="field-value">Web Developer / Analyst</span>
                         </div>
                     </div>
                     <div class="project-section">
-                        <span class="field-label">Description</span>
-                        <p>Проект по веб-разработке и автоматизации внутренних процессов. Интеграция базы данных и настройка CI/CD пайплайнов.</p>
+                        <span class="field-label" data-i18n="lblDesc">Description</span>
+                        <p data-i18n="p3Desc">Проект по веб-разработке и автоматизации внутренних процессов. Интеграция базы данных и настройка CI/CD пайплайнов.</p>
                     </div>
                 </div>
             </details>
@@ -539,17 +586,17 @@
                 <div class="project-content">
                     <div class="project-grid">
                         <div class="field-group">
-                            <span class="field-label">Project name</span>
+                            <span class="field-label" data-i18n="lblProjName">Project name</span>
                             <span class="field-value">ACP Decisions Support</span>
                         </div>
                         <div class="field-group">
-                            <span class="field-label">Position</span>
+                            <span class="field-label" data-i18n="lblPosition">Position</span>
                             <span class="field-value">Project Manager</span>
                         </div>
                     </div>
                     <div class="project-section">
-                        <span class="field-label">Description</span>
-                        <p>Система поддержки принятия решений в сфере управления процессами. Внедрение Agile-подходов и управление рисками на этапе релизов.</p>
+                        <span class="field-label" data-i18n="lblDesc">Description</span>
+                        <p data-i18n="p4Desc">Система поддержки принятия решений в сфере управления процессами. Внедрение Agile-подходов и управление рисками на этапе релизов.</p>
                     </div>
                 </div>
             </details>
@@ -559,21 +606,92 @@
                 <div class="project-content">
                     <div class="project-grid">
                         <div class="field-group">
-                            <span class="field-label">Project name</span>
+                            <span class="field-label" data-i18n="lblProjName">Project name</span>
                             <span class="field-value">Laba_a-benefits</span>
                         </div>
                         <div class="field-group">
-                            <span class="field-label">Position</span>
+                            <span class="field-label" data-i18n="lblPosition">Position</span>
                             <span class="field-value">Business Analyst</span>
                         </div>
                     </div>
                     <div class="project-section">
-                        <span class="field-label">Description</span>
-                        <p>Разработка и внедрение модуля учета корпоративных бонусов и бенефитов для сотрудников с поддержкой стандартов безопасности данных GDPR.</p>
+                        <span class="field-label" data-i18n="lblDesc">Description</span>
+                        <p data-i18n="p5Desc">Разработка и внедрение модуля учета корпоративных бонусов и бенефитов для сотрудников с поддержкой стандартов безопасности данных GDPR.</p>
                     </div>
                 </div>
             </details>
         </div>
     </div>
+
+    <!-- Скрипт мультиязычности -->
+    <script>
+        const translations = {
+            ru: {
+                name: "Илья Ксензов",
+                role: "IT-специалист / Веб-разработчик",
+                aboutTitle: "Обо мне",
+                aboutText: 'Опытный IT-профессионал, сочетающий <span class="highlight">Project Management</span> и <span class="highlight">ITSM</span>. Реализованные инициативы привели к <span class="highlight">сокращению времени простоя на 80%</span> и <span class="highlight">повышению производительности команды на 93%</span>.',
+                eduTitle: "Образование",
+                edu1: "Академия управления при Президенте РБ | Гос. управление и право",
+                edu2: "БГУФК | Менеджмент спортивной индустрии",
+                skillsTitle: "Навыки",
+                projectsTitle: 'Проекты <span class="projects-count">(5 проектов)</span>',
+                projectsCount: "(5 проектов)",
+                lblProjName: "Project name",
+                lblDuration: "Duration",
+                lblTeam: "Team",
+                lblPosition: "Position",
+                lblDesc: "Description",
+                lblResp: "Responsibilities",
+                lblTech: "Technologies and tools",
+                p1Duration: "🗓️ Нояб 2025 - по наст. время",
+                p1Team: "6 участников",
+                p1Desc: "Платформа предоставляет информацию об ушедших из жизни, включая даты похорон, места захоронений и поминальные сообщения от семьи и друзей. Она также помогает пользователям находить информацию о предстоящих церемониях, являясь важным ресурсом поддержки сообщества. Проект требует надежной пост-релизной поддержки, сфокусированной на регулярном обслуживании и помощи пользователям. Наша модель сочетает техническую стабильность и функциональное удобство системы на базе WordPress.",
+                p2Desc: "Поддержка и сопровождение клиентских сервисов сетевых медицинских клиник. Сокращение времени обработки обращений и внедрение базы знаний (Confluence).",
+                p3Desc: "Проект по веб-разработке и автоматизации внутренних процессов. Интеграция базы данных и настройка CI/CD пайплайнов.",
+                p4Desc: "Система поддержки принятия решений в сфере управления процессами. Внедрение Agile-подходов и управление рисками на этапе релизов.",
+                p5Desc: "Разработка и внедрение модуля учета корпоративных бонусов и бенефитов для сотрудников с поддержкой стандартов безопасности данных GDPR."
+            },
+            en: {
+                name: "Ilya Ksenzov",
+                role: "IT Specialist / Web Developer",
+                aboutTitle: "About Me",
+                aboutText: 'Experienced IT professional combining <span class="highlight">Project Management</span> and <span class="highlight">ITSM</span>. Implemented initiatives resulted in an <span class="highlight">80% reduction in downtime</span> and a <span class="highlight">93% increase in team productivity</span>.',
+                eduTitle: "Education",
+                edu1: "Academy of Public Administration | Public Administration and Law",
+                edu2: "BSUPC | Sports Industry Management",
+                skillsTitle: "Skills",
+                projectsTitle: 'Projects <span class="projects-count">(5 projects)</span>',
+                projectsCount: "(5 projects)",
+                lblProjName: "Project name",
+                lblDuration: "Duration",
+                lblTeam: "Team",
+                lblPosition: "Position",
+                lblDesc: "Description",
+                lblResp: "Responsibilities",
+                lblTech: "Technologies and tools",
+                p1Duration: "🗓️ Nov 2025 - till now",
+                p1Team: "6 members",
+                p1Desc: "The platform provides information about the deceased, including funeral dates, burial locations, and memorial messages from family and friends. It also helps users find details about upcoming funerals and ceremonies, making it an important resource that supports the Irish community in commemorating their loved ones. The project requires reliable post-launch support focused on regular maintenance and user assistance. Our support model combines consistent maintenance and expert consultation, ensuring both the technical stability and functional usability of the WordPress-based system.",
+                p2Desc: "Support and maintenance of client services for medical clinic networks. Reduced ticket processing time and implemented a knowledge base (Confluence).",
+                p3Desc: "Web development and internal process automation project. Database integration and CI/CD pipeline configuration.",
+                p4Desc: "Decision support system in process management. Implementation of Agile methodology and risk management during release phases.",
+                p5Desc: "Development and deployment of an employee benefits tracking module with GDPR compliance."
+            }
+        };
+
+        function switchLang(lang) {
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+            document.documentElement.lang = lang;
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+        }
+    </script>
 </body>
 </html>
