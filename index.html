@@ -203,12 +203,17 @@
             box-shadow: 0 10px 20px rgba(168, 85, 247, 0.15);
         }
 
-        /* Встроенные SVG-картинки, которые никогда не заблокируются */
-        .contact-img {
-            width: 22px;
-            height: 22px;
-            display: block;
+        /* Стили для встроенных SVG-иконок кода */
+        .contact-svg {
+            width: 24px;
+            height: 24px;
+            fill: #a855f7; /* Изначально фиолетовые */
+            transition: fill 0.3s ease;
             flex-shrink: 0;
+        }
+
+        .contact-card:hover .contact-svg {
+            fill: #6366f1; /* При наведении становятся синими */
         }
 
         .contact-label {
@@ -279,17 +284,19 @@
         <h2>Контакты</h2>
         <div class="contacts-container">
             
-            <!-- Карточка Email -->
+            <!-- Карточка Email со встроенным SVG-кодом конверта -->
             <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card">
-                <!-- Прямая официальная SVG картинка конверта от команды Telegram/Вконтакте (хранится в CDN и не блокируется) -->
-                <img class="contact-img" src="https://iconify.design" alt="Email">
+                <svg class="contact-svg" viewBox="0 0 24 24">
+                    <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5L4 6h16zm0 12H4V8l8 5 8-5v10z"/>
+                </svg>
                 <span class="contact-label">Email</span>
             </a>
 
-            <!-- Карточка Telegram -->
+            <!-- Карточка Telegram со встроенным SVG-кодом оригинального самолетика -->
             <a href="tg://resolve?domain=ksnz1" class="contact-card">
-                <!-- Прямая официальная SVG картинка оригинального логотипа Telegram -->
-                <img class="contact-img" src="https://iconify.design" alt="Telegram">
+                <svg class="contact-svg" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-.99.53-1.41.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.46-.42-1.4-.88.03-.24.36-.49.99-.75 3.88-1.69 6.46-2.8 7.74-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.19.34.02.1.04.33.02.48z"/>
+                </svg>
                 <span class="contact-label">Telegram</span>
             </a>
 
