@@ -1,40 +1,184 @@
+Ревью исходного кода вашего сайта-визитки. В целом код чистый, верстка современная (glassmorphism, CSS grid/flexbox), но есть несколько важных технических моментов, ошибок и рекомендаций по улучшению:
+
+---
+
+### 1. Критические ошибки и баги
+
+* **Подключение Google Fonts:**
+* В коде указано: `<link href="[https://googleapis.com](https://googleapis.com)" rel="stylesheet">`.
+* **Проблема:** Это ошибочный и нерабочий URL. Из-за этого шрифт `Inter`, прописанный в `font-family: 'Inter', sans-serif;`, не загружается, и браузер отображает стандартный системный шрифт (sans-serif).
+* **Как исправить:** Замените строку подключения шрифта на правильную от Google Fonts:
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+```
+
+
+
+
+* **Ссылка на Telegram (`tg://`):**
+* В коде указано: `href="tg://resolve?domain=ksnz1"`.
+* **Проблема:** Протокол `tg://` работает отлично на смартфонах и ПК с установленным приложением Telegram, но если у пользователя не установлен клиент (или он зашел с чужого устройства), ссылка не откроется.
+* **Как исправить:** Лучше использовать универсальную веб-ссылку: `[https://t.me/ksnz1](https://t.me/ksnz1)`. Браузер сам предложит открыть приложение или перейти в веб-версию.
+
+
+
+---
+
+### 2. Семантика HTML и SEO
+
+* **Семантика заголовков (`<div class="h1">`):**
+* Вы использовали `<div class="h1">Илья Ксензов</div>` вместо честного тега `<h1>`.
+* **Почему это важно:** Тег `<h1>` — главный заголовок страницы. Поисковые роботы (SEO) и скрины-ридеры ориентируются на `<h1>`. Позже в коде у вас используются теги `<h2>`, поэтому пропуск `<h1>` нарушает иерархию заголовков.
+* **Как исправить:** Измените `<div class="h1">` на `<h1>`, а в CSS селектор `.h1` переименуйте в `h1`.
+
+
+* **Отсутствие мета-тегов SEO / Open Graph:**
+* Для визитки полезно добавить описание (`description`) и мета-теги Open Graph, чтобы при отправке ссылки в Telegram/LinkedIn красиво формировалась превью-карточка.
+* **Что добавить в `<head>`:**
+```html
+<meta name="description" content="Резюме и портфолио: Илья Ксензов — IT-специалист, Project Manager, Веб-разработчик.">
+<!-- Open Graph -->
+<meta property="og:title" content="Резюме | Илья Ксензов">
+<meta property="og:description" content="IT-специалист / Project Manager / Веб-разработчик">
+<meta property="og:image" content="https://ksenzao.github.io/first-prohect/avatar.jpg">
+<meta property="og:type" content="website">
+
+```
+
+
+
+
+
+---
+
+### 3. CSS и оптимизация кода
+
+* **Минификация и читаемость:**
+* Весь CSS записан в одну строку внутри `<style>`. Это нормально для итогового билда (для ускорения загрузки), но для поддержки кода удобнее либо вынести CSS в отдельный файл `style.css`, либо форматировать с переносами строк.
+
+
+* **Стилизация Hover-эффекта:**
+* У `.contact-card` прописан классный плавный переход `transition: all .3s`, а также `transform: translateY(-3px)`. Это сделано качественно и эстетично.
+
+
+* **Адаптивность (Responsive):**
+* Контейнер имеет `max-width: 750px` и `width: 100%`, а сетка контактов `grid-template-columns: 1fr 1fr`.
+* **Рекомендация:** На совсем маленьких экранах (мобильные до 380px) сетка контактов из двух колонок может сжиматься слишком сильно. Можно добавить медиа-запрос:
+```css
+@media (max-width: 480px) {
+  .contacts-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+```
+
+
+
+
+
+---
+
+### Итоговый исправленный вариант HTML (готовый к копированию):
+
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Резюме | Илья Ксензов</title>
-    <link href="https://googleapis.com" rel="stylesheet">
+    <meta name="description" content="Резюме и портфолио: Илья Ксензов — IT-специалист, Project Manager, Веб-разработчик.">
+    
+    <!-- Подключение шрифта Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        *{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;line-height:1.7;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#311042 100%);color:#f1f5f9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}.container{max-width:750px;width:100%;background:rgba(30,41,59,.7);backdrop-filter:blur(16px);padding:50px 40px;border-radius:24px;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 40px rgba(0,0,0,.3);text-align:center}.avatar-wrapper{position:relative;width:160px;height:160px;margin:0 auto 25px auto}.profile-img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:4px solid #6366f1}.h1{font-size:2.2rem;font-weight:700;background:linear-gradient(to right,#fff,#e2e8f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}.subtitle{color:#94a3b8;font-size:1.15rem;font-weight:500;margin-bottom:35px;text-transform:uppercase;letter-spacing:.05em}h2{font-size:1.4rem;font-weight:600;color:#a855f7;margin-top:35px;margin-bottom:15px;text-align:left;position:relative;padding-bottom:8px}h2::after{content:'';position:absolute;bottom:0;left:0;width:40px;height:3px;background:linear-gradient(to right,#6366f1,#a855f7);border-radius:2px}p{color:#cbd5e1;text-align:left;font-size:1.05rem;margin-bottom:10px}.highlight{color:#fff;font-weight:600}.info-list{list-style:none;text-align:left;margin-top:10px}.info-list li{position:relative;padding-left:20px;color:#cbd5e1;font-size:1.05rem;margin-bottom:8px}.info-list li::before{content:'•';position:absolute;left:0;color:#6366f1}.skill-category-title{text-align:left;font-size:.85rem;color:#94a3b8;text-transform:uppercase;margin:20px 0 8px;font-weight:600;letter-spacing:.05em}.skills-list{display:flex;flex-wrap:wrap;gap:10px;list-style:none}.skills-list li{background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);padding:8px 16px;border-radius:12px;font-size:.95rem;color:#e2e8f0;font-weight:500}.contacts-container{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:20px}.contact-card{display:flex;align-items:center;justify-content:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:18px;border-radius:16px;text-decoration:none;transition:all .3s}.contact-card:hover{background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.4);transform:translateY(-3px)}.contact-svg{width:24px;height:24px;fill:#a855f7}.contact-label{font-size:1rem;color:#f1f5f9;font-weight:600;text-transform:uppercase}
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; line-height: 1.7; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%); color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+        .container { max-width: 750px; width: 100%; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); text-align: center; }
+        .avatar-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto 25px auto; }
+        .profile-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid #6366f1; }
+        h1 { font-size: 2.2rem; font-weight: 700; background: linear-gradient(to right, #fff, #e2e8f0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+        .subtitle { color: #94a3b8; font-size: 1.15rem; font-weight: 500; margin-bottom: 35px; text-transform: uppercase; letter-spacing: 0.05em; }
+        h2 { font-size: 1.4rem; font-weight: 600; color: #a855f7; margin-top: 35px; margin-bottom: 15px; text-align: left; position: relative; padding-bottom: 8px; }
+        h2::after { content: ''; position: absolute; bottom: 0; left: 0; width: 40px; height: 3px; background: linear-gradient(to right, #6366f1, #a855f7); border-radius: 2px; }
+        p { color: #cbd5e1; text-align: left; font-size: 1.05rem; margin-bottom: 10px; }
+        .highlight { color: #fff; font-weight: 600; }
+        .info-list { list-style: none; text-align: left; margin-top: 10px; }
+        .info-list li { position: relative; padding-left: 20px; color: #cbd5e1; font-size: 1.05rem; margin-bottom: 8px; }
+        .info-list li::before { content: '•'; position: absolute; left: 0; color: #6366f1; }
+        .skill-category-title { text-align: left; font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; margin: 20px 0 8px; font-weight: 600; letter-spacing: 0.05em; }
+        .skills-list { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; }
+        .skills-list li { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); padding: 8px 16px; border-radius: 12px; font-size: 0.95rem; color: #e2e8f0; font-weight: 500; }
+        .contacts-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .contact-card { display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 16px; text-decoration: none; transition: all 0.3s; }
+        .contact-card:hover { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.4); transform: translateY(-3px); }
+        .contact-svg { width: 24px; height: 24px; fill: #a855f7; }
+        .contact-label { font-size: 1rem; color: #f1f5f9; font-weight: 600; text-transform: uppercase; }
+
+        @media (max-width: 480px) {
+            .contacts-container { grid-template-columns: 1fr; }
+            .container { padding: 30px 20px; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="avatar-wrapper"><img src="avatar.jpg" alt="Илья Ксензов" class="profile-img"></div>
-        <div class="h1">Илья Ксензов</div>
+        <div class="avatar-wrapper">
+            <img src="avatar.jpg" alt="Илья Ксензов" class="profile-img">
+        </div>
+        <h1>Илья Ксензов</h1>
         <div class="subtitle">IT-специалист / Веб-разработчик</div>
+        
         <h2>Обо мне</h2>
         <p>Опытный IT-профессионал, сочетающий <span class="highlight">Project Management</span> и <span class="highlight">ITSM</span>. Реализованные инициативы привели к <span class="highlight">сокращению времени простоя на 80%</span> и <span class="highlight">повышению производительности команды на 93%</span>.</p>
+        
         <h2>Образование</h2>
         <ul class="info-list">
             <li>Академия управления при Президенте РБ | Гос. управление и право</li>
             <li>БГУФК | Менеджмент спортивной индустрии</li>
         </ul>
+        
         <h2>Навыки</h2>
         <div class="skill-category-title">Management & Methodologies</div>
-        <ul class="skills-list"><li>Project Management</li><li>Agile/Scrum/Kanban</li><li>Risk Management</li><li>Team Management</li><li>Business Analyst</li></ul>
+        <ul class="skills-list">
+            <li>Project Management</li>
+            <li>Agile/Scrum/Kanban</li>
+            <li>Risk Management</li>
+            <li>Team Management</li>
+            <li>Business Analyst</li>
+        </ul>
+        
         <div class="skill-category-title">ITSM & Tools</div>
-        <ul class="skills-list"><li>ITSM & ITIL</li><li>Service Desk</li><li>Atlassian JIRA/Confluence</li><li>GDPR</li></ul>
+        <ul class="skills-list">
+            <li>ITSM & ITIL</li>
+            <li>Service Desk</li>
+            <li>Atlassian JIRA/Confluence</li>
+            <li>GDPR</li>
+        </ul>
+        
         <div class="skill-category-title">Tech Stack</div>
-        <ul class="skills-list"><li>HTML5/CSS3</li><li>Git/GitHub</li><li>CI/CD</li><li>AWS</li><li>SQL (Postgres, mySql, Oracle)</li></ul>
+        <ul class="skills-list">
+            <li>HTML5/CSS3</li>
+            <li>Git/GitHub</li>
+            <li>CI/CD</li>
+            <li>AWS</li>
+            <li>SQL (Postgres, mySql, Oracle)</li>
+        </ul>
+        
         <h2>Контакты</h2>
         <div class="contacts-container">
             <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card">
                 <svg class="contact-svg" viewBox="0 0 24 24"><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/></svg>
                 <span class="contact-label">Email</span>
             </a>
-            <a href="tg://resolve?domain=ksnz1" class="contact-card">
+            <a href="https://t.me/ksnz1" class="contact-card" target="_blank" rel="noopener noreferrer">
                 <svg class="contact-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-.99.53-1.41.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.46-.42-1.4-.88.03-.24.36-.49.99-.75 3.88-1.69 6.46-2.8 7.74-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.19.34.02.1.04.33.02.48z"/></svg>
                 <span class="contact-label">Telegram</span>
             </a>
@@ -42,3 +186,5 @@
     </div>
 </body>
 </html>
+
+```
