@@ -10,298 +10,57 @@
     <link href="https://googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.7;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
-            color: #f1f5f9;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
-        /* Карточка с эффектом матового стекла (Glassmorphism) */
-        .container {
-            max-width: 750px;
-            width: 100%;
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 50px 40px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Стили контейнера аватарки */
-        .avatar-wrapper {
-            position: relative;
-            width: 160px;
-            height: 160px;
-            margin: 0 auto 25px auto;
-        }
-
-        .profile-img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            border: 4px solid #6366f1;
-            background: linear-gradient(#1e293b, #1e293b) padding-box,
-                        linear-gradient(to right, #6366f1, #a855f7) border-box;
-            display: block;
-        }
-
-        /* Текстовые блоки */
-        h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #ffffff, #e2e8f0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            color: #94a3b8;
-            font-size: 1.15rem;
-            font-weight: 500;
-            margin-bottom: 35px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        h2 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: #a855f7;
-            margin-top: 35px;
-            margin-bottom: 15px;
-            text-align: left;
-            position: relative;
-            padding-bottom: 8px;
-        }
-
-        /* Линия подчеркивания под заголовками */
-        h2::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 40px;
-            height: 3px;
-            background: linear-gradient(to right, #6366f1, #a855f7);
-            border-radius: 2px;
-        }
-
-        p {
-            color: #cbd5e1;
-            text-align: left;
-            font-size: 1.05rem;
-            margin-bottom: 10px;
-        }
-
-        /* Стили для списков опыта и образования */
-        .info-list {
-            list-style: none;
-            text-align: left;
-            margin-top: 10px;
-        }
-
-        .info-list li {
-            position: relative;
-            padding-left: 20px;
-            color: #cbd5e1;
-            font-size: 1.05rem;
-            margin-bottom: 8px;
-        }
-
-        .info-list li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: #6366f1;
-            font-weight: bold;
-        }
-
-        /* Список навыков в виде тегов */
-        .skills-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            list-style: none;
-            margin-top: 10px;
-        }
-
-        .skills-list li {
-            background: rgba(99, 102, 241, 0.15);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            color: #e2e8f0;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .skills-list li:hover {
-            background: rgba(99, 102, 241, 0.3);
-            border-color: #6366f1;
-            transform: translateY(-2px);
-        }
-
-        /* Секция контактов */
-        .contacts-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-            width: 100%;
-        }
-
-        @media (max-width: 500px) {
-            .contacts-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .contact-card {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 18px 20px;
-            border-radius: 16px;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 100%;
-        }
-
-        .contact-card:hover {
-            background: rgba(168, 85, 247, 0.1);
-            border-color: rgba(168, 85, 247, 0.4);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.15);
-        }
-
-        /* Стили для встроенных SVG-иконок кода */
-        .contact-svg {
-            width: 24px;
-            height: 24px;
-            fill: #a855f7; /* Изначально фиолетовые */
-            transition: fill 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .contact-card:hover .contact-svg {
-            fill: #6366f1; /* При наведении становятся синими */
-        }
-
-        .contact-label {
-            font-size: 1rem;
-            color: #f1f5f9;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; line-height: 1.7; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%); color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+        .container { max-width: 750px; width: 100%; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); padding: 50px 40px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); text-align: center; }
+        .avatar-wrapper { position: relative; width: 160px; height: 160px; margin: 0 auto 25px auto; }
+        .profile-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid #6366f1; }
+        h1 { font-size: 2.2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .subtitle { color: #94a3b8; font-size: 1.15rem; margin-bottom: 35px; text-transform: uppercase; }
+        .section-title { display: flex; align-items: center; gap: 12px; font-size: 1.4rem; color: #a855f7; margin: 35px 0 15px; text-align: left; padding-bottom: 8px; border-bottom: 2px solid #6366f1; }
+        .title-icon { width: 24px; height: 24px; fill: #a855f7; }
+        p { color: #cbd5e1; text-align: left; margin-bottom: 12px; }
+        .highlight { color: #ffffff; font-weight: 600; }
+        .skill-category-title { text-align: left; font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; margin: 15px 0 8px; font-weight: 600; }
+        .info-list { list-style: none; text-align: left; margin-top: 10px; }
+        .info-list li { position: relative; padding-left: 20px; margin-bottom: 8px; }
+        .skills-list { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; margin-bottom: 5px; }
+        .skills-list li { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); padding: 8px 16px; border-radius: 12px; }
+        .contacts-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        @media (max-width: 500px) { .contacts-container { grid-template-columns: 1fr; } }
+        .contact-card { display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 16px; text-decoration: none; color: #f1f5f9; transition: 0.3s; }
+        .contact-card:hover { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.4); }
+        .contact-svg { width: 24px; height: 24px; fill: #a855f7; }
     </style>
 </head>
 <body>
-
     <div class="container">
-        
-        <!-- Блок аватарки подтягивает загруженный на GitHub файл avatar.jpg -->
-        <div class="avatar-wrapper">
-            <img src="avatar.jpg" alt="Илья Ксензов" class="profile-img">
-        </div>
-
+        <div class="avatar-wrapper"><img src="avatar.jpg" alt="Илья Ксензов" class="profile-img"></div>
         <h1>Илья Ксензов</h1>
         <div class="subtitle">IT-специалист / Веб-разработчик</div>
-
-        <h2>Обо мне</h2>
-        <p>Опытный и стратегически мыслящий IT-профессионал, успешно сочетающий глубокую экспертизу в управлении проектами (Project Management) с ключевыми компетенциями в области управления IT-услугами (ITSM). Мой карьерный фундамент построен на успешном руководстве сложными IT-инициативами, включая миграцию инфраструктуры и развертывание корпоративных систем.</p>
-        <p>Использую обширный проектный опыт в ITSM-среде для обеспечения максимальной операционной эффективности, отказоустойчивости и непрерывного повышения качества услуг. Обладаю подтвержденным опытом оптимизации ключевых процессов — управления изменениями, инцидентами и проблемами — с использованием лучших практик ITIL. Реализованные инициативы привели к сокращению времени простоя сервисов на 80% и значительному росту удовлетворенности внутренних клиентов (SLA/OLA).</p>
-        <p>В текущей роли сосредоточен на оптимизации операционной деятельности с использованием лучших практик ITSM для повышения стабильности и масштабируемости IT-среды. Мой опыт включает успешное внедрение новых инструментов Service Desk и автоматизацию сервисных запросов, что повысило производительность команды на 93%. Эффективно выстраиваю прочные каналы коммуникации и взаимодействия между техническими командами и бизнес-подразделениями, выступая в качестве связующего звена между IT и бизнесом.</p>
-
-        <h2>Опыт работы</h2>
+        
+        <div class="section-title">Обо мне</div>
+        <p>Опытный IT-профессионал, сочетающий <span class="highlight">Project Management</span> и <span class="highlight">ITSM</span>. Реализовал инициативы, <span class="highlight">сократившие простои на 80%</span>, автоматизировал запросы, <span class="highlight">повысив производительность на 93%</span>.</p>
+        
+        <div class="section-title">Опыт работы</div>
         <p><strong>Общий стаж:</strong> 4 года и 8 месяцев</p>
-
-        <h2>Образование</h2>
+        
+        <div class="section-title">Образование</div>
         <ul class="info-list">
-            <li>Академия управления при Президенте Республики Беларусь | Государственное управление и право</li>
-            <li>Белорусский государственный университет физической культуры | Менеджмент спортивной индустрии</li>
+            <li>Академия управления при Президенте РБ</li>
+            <li>БГУФК | Менеджмент</li>
         </ul>
-
-        <h2>Навыки</h2>
-        <ul class="skills-list">
-            <li>Project Management</li>
-            <li>ITSM & ITIL</li>
-            <li>Service Desk</li>
-            <li>HTML5 & CSS3</li>
-            <li>Git & GitHub</li>
-            <li>Agile</li>
-            <li>Scrum</li>
-            <li>Kanban</li>
-            <li>Project Planning & Scheduling</li>
-            <li>Risk Management</li>
-            <li>Team Management</li>
-            <li>Stakeholder Management</li>
-            <li>Business Analyst</li>
-            <li>Meetings facilitation</li>
-            <li>Communication Skills</li>
-            <li>Atlassian</li>
-            <li>JIRA</li>
-            <li>Confluence</li>
-            <li>Gitflow</li>
-            <li>CI/CD concept</li>
-            <li>Microservices</li>
-            <li>Amazon Web Services (AWS)</li>
-            <li>AWS Cloud</li>
-            <li>SQL DB (Postgres, mySql, Oracle)</li>
-            <li>Dbeaver</li>
-            <li>SonarQube</li>
-            <li>GDPR</li>
-        </ul>
-        <h2>Контакты</h2>
+        
+        <div class="section-title">Навыки</div>
+        <div class="skill-category-title">Management</div>
+        <ul class="skills-list"><li>Project Management</li><li>Agile</li><li>Scrum</li><li>ITIL</li></ul>
+        <div class="skill-category-title">Tech Stack</div>
+        <ul class="skills-list"><li>HTML/CSS</li><li>Git</li><li>AWS</li><li>SQL</li></ul>
+        <div class="section-title">Контакты</div>
         <div class="contacts-container">
-            
-            <!-- Карточка Email со встроенным SVG-кодом конверта -->
-            <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card">
-                <svg class="contact-svg" viewBox="0 0 24 24">
-                    <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5L4 6h16zm0 12H4V8l8 5 8-5v10z"/>
-                </svg>
-                <span class="contact-label">Email</span>
-            </a>
-
-            <!-- Карточка Telegram со встроенным SVG-кодом оригинального самолетика -->
-            <a href="tg://resolve?domain=ksnz1" class="contact-card">
-                <svg class="contact-svg" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-.99.53-1.41.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.46-.42-1.4-.88.03-.24.36-.49.99-.75 3.88-1.69 6.46-2.8 7.74-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.19.34.02.1.04.33.02.48z"/>
-                </svg>
-                <span class="contact-label">Telegram</span>
-            </a>
-
+            <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card"><span>Email</span></a>
+            <a href="tg://resolve?domain=ksnz1" class="contact-card"><span>Telegram</span></a>
         </div>
     </div>
-
 </body>
 </html>
