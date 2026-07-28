@@ -84,7 +84,7 @@
             letter-spacing: 0.05em;
         }
 
-        /* Кнопки контактов в шапке */
+        /* Кнопки контактов */
         .contacts-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -140,6 +140,9 @@
             text-align: left;
             position: relative;
             padding-bottom: 8px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
         }
 
         h2::after {
@@ -151,6 +154,12 @@
             height: 3px;
             background: linear-gradient(to right, #6366f1, #a855f7);
             border-radius: 2px;
+        }
+
+        .projects-count {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 400;
         }
 
         p {
@@ -165,6 +174,97 @@
             font-weight: 600;
         }
 
+        /* Аккордеон проектов */
+        .projects-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        details {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        details[open] {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        summary {
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: #f1f5f9;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+            transition: color 0.2s ease;
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary:hover {
+            color: #a855f7;
+        }
+
+        /* Стрелочка с анимацией поворота */
+        summary::before {
+            content: '›';
+            font-size: 1.4rem;
+            line-height: 1;
+            color: #6366f1;
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+
+        details[open] summary::before {
+            transform: rotate(90deg);
+            color: #a855f7;
+        }
+
+        .project-content {
+            padding: 0 20px 20px 44px;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            margin-top: -5px;
+            padding-top: 15px;
+        }
+
+        .project-content p {
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            color: #cbd5e1;
+        }
+
+        .project-tech {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .project-tech span {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+        }
+
+        /* Списки */
         .info-list {
             list-style: none;
             text-align: left;
@@ -232,6 +332,9 @@
             h1 {
                 font-size: 2rem;
             }
+            .project-content {
+                padding-left: 20px;
+            }
         }
     </style>
 </head>
@@ -244,7 +347,7 @@
         <h1>Илья Ксензов</h1>
         <div class="subtitle">IT-специалист / Веб-разработчик</div>
         
-        <!-- Кнопки контактов сразу в шапке -->
+        <!-- Кнопки контактов -->
         <div class="contacts-container">
             <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card">
                 <svg class="contact-svg" viewBox="0 0 24 24"><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/></svg>
@@ -259,6 +362,71 @@
 
         <h2>Обо мне</h2>
         <p>Опытный IT-профессионал, сочетающий <span class="highlight">Project Management</span> и <span class="highlight">ITSM</span>. Реализованные инициативы привели к <span class="highlight">сокращению времени простоя на 80%</span> и <span class="highlight">повышению производительности команды на 93%</span>.</p>
+
+        <!-- Секция Проекты -->
+        <h2>Проекты <span class="projects-count">(5 проектов)</span></h2>
+        <div class="projects-list">
+            <details>
+                <summary>AtRest_Support</summary>
+                <div class="project-content">
+                    <p>Организация и оптимизация процессов технической поддержки для сервисов релаксации и отдыха. Настройка Service Desk, SLA и регламентов эскалации инцидентов.</p>
+                    <div class="project-tech">
+                        <span>ITSM</span>
+                        <span>Jira Service Management</span>
+                        <span>SLA</span>
+                    </div>
+                </div>
+            </details>
+
+            <details>
+                <summary>Urban Smile Support</summary>
+                <div class="project-content">
+                    <p>Поддержка и сопровождение клиентских сервисов сетевых медицинских клиник. Сокращение времени обработки обращений и внедрение базы знаний (Confluence).</p>
+                    <div class="project-tech">
+                        <span>ITIL</span>
+                        <span>Confluence</span>
+                        <span>Helpdesk</span>
+                    </div>
+                </div>
+            </details>
+
+            <details>
+                <summary>Dimaex</summary>
+                <div class="project-content">
+                    <p>Проект по веб-разработке и автоматизации внутренних процессов. Интеграция базы данных и настройка CI/CD пайплайнов.</p>
+                    <div class="project-tech">
+                        <span>HTML/CSS</span>
+                        <span>SQL</span>
+                        <span>CI/CD</span>
+                        <span>Git</span>
+                    </div>
+                </div>
+            </details>
+
+            <details>
+                <summary>ACP Decisions Support</summary>
+                <div class="project-content">
+                    <p>Система поддержки принятия решений в сфере управления процессами. Внедрение Agile-подходов и управление рисками на этапе релизов.</p>
+                    <div class="project-tech">
+                        <span>Project Management</span>
+                        <span>Agile/Scrum</span>
+                        <span>Risk Analysis</span>
+                    </div>
+                </div>
+            </details>
+
+            <details>
+                <summary>Laba_a-benefits</summary>
+                <div class="project-content">
+                    <p>Разработка и внедрение модуля учета корпоративных бонусов и бенефитов для сотрудников с поддержкой стандартов безопасности данных GDPR.</p>
+                    <div class="project-tech">
+                        <span>Business Analysis</span>
+                        <span>GDPR</span>
+                        <span>PostgreSQL</span>
+                    </div>
+                </div>
+            </details>
+        </div>
         
         <h2>Образование</h2>
         <ul class="info-list">
