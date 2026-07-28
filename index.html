@@ -167,18 +167,26 @@
             transform: translateY(-2px);
         }
 
-        /* Секция контактов */
+        /* Секция контактов с жестким разделением на две колонки */
         .contacts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Адаптивность для мобильных телефонов (кнопки встанут друг под друга) */
+        @media (max-width: 500px) {
+            .contacts-container {
+                grid-template-columns: 1fr;
+            }
         }
 
         .contact-card {
             display: flex;
             align-items: center;
-            justify-content: center; /* Центрируем содержимое карточек */
+            justify-content: center;
             gap: 12px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -186,6 +194,7 @@
             border-radius: 16px;
             text-decoration: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
         }
 
         .contact-card:hover {
@@ -279,8 +288,3 @@
             <!-- Карточка Email -->
             <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card">
                 <svg class="contact-icon" viewBox="0 0 24 24">
-                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                </svg>
-                <span class="contact-label">Email</span>
-            </a>
-
