@@ -20,6 +20,17 @@
             padding: 40px;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            text-align: center; /* Центрируем аватарку и заголовок */
+        }
+        /* Стили для вашей фотографии */
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%; /* Делает фото круглым */
+            object-fit: cover; /* Защищает фото от искажения и растягивания */
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 3px solid #3498db; /* Красивая рамка вокруг фото */
         }
         h1 {
             color: #2c3e50;
@@ -35,6 +46,10 @@
             padding-bottom: 5px;
             color: #2c3e50;
             margin-top: 30px;
+            text-align: left; /* Заголовки разделов оставляем слева */
+        }
+        p, ul {
+            text-align: left; /* Текст оставляем выровненным по левому краю */
         }
         ul {
             padding-left: 20px;
@@ -44,6 +59,9 @@
 <body>
 
     <div class="container">
+        <!-- Ваша фотография. Убедитесь, что загруженный файл в GitHub называется точно так же -->
+        <img src="avatar.jpg" alt="Мое фото" class="profile-img">
+
         <h1>Илья Ксензов</h1>
         <div class="subtitle">Начинающий веб-разработчик</div>
 
@@ -64,3 +82,4 @@
 
 </body>
 </html>
+
