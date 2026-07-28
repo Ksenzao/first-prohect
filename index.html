@@ -176,30 +176,62 @@
             transform: translateY(-2px);
         }
 
-        /* Раздел контактов */
-        .contacts-block p {
-            margin-bottom: 10px;
-            text-align: left;
-            font-size: 1.05rem;
-        }
-        
-        .contacts-block strong {
-            color: #94a3b8;
-            font-weight: 500;
-            margin-right: 5px;
+        /* НОВАЯ КРАСИВАЯ СЕКЦИЯ КОНТАКТОВ */
+        .contacts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
         }
 
-        /* Оформление для кликабельных ссылок */
-        .contacts-block a {
-            color: #a855f7;
+        .contact-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px 20px;
+            border-radius: 16px;
             text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .contacts-block a:hover {
-            color: #6366f1;
-            text-decoration: underline;
+        .contact-card:hover {
+            background: rgba(168, 85, 247, 0.1);
+            border-color: rgba(168, 85, 247, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.15);
+        }
+
+        .contact-icon {
+            width: 24px;
+            height: 24px;
+            fill: #a855f7;
+            transition: fill 0.3s;
+        }
+
+        .contact-card:hover .contact-icon {
+            fill: #6366f1;
+        }
+
+        .contact-info {
+            text-align: left;
+        }
+
+        .contact-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .contact-value {
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            font-weight: 500;
+            word-break: break-all;
         }
 
         /* Кнопка режима владельца */
@@ -209,7 +241,7 @@
             color: #64748b;
             font-size: 0.8rem;
             cursor: pointer;
-            margin-top: 45px;
+            margin-top: 50px;
             transition: color 0.2s;
             text-decoration: underline;
         }
@@ -245,10 +277,32 @@
         </ul>
 
         <h2>Контакты</h2>
-        <div class="contacts-block">
-            <p><strong>Email:</strong> <a href="mailto:ilya.ksenzov.1996@gmail.com">ilya.ksenzov.1996@gmail.com</a></p>
-            <!-- Прямая ссылка для принудительного открытия установленного приложения Telegram -->
-            <p><strong>Telegram:</strong> <a href="tg://resolve?domain=ksnz1">Написать мне</a></p>
+        <div class="contacts-container">
+            
+            <!-- Карточка Email -->
+            <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card">
+                <!-- SVG Иконка письма -->
+                <svg class="contact-icon" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                <div class="contact-info">
+                    <span class="contact-label">Email</span>
+                    <span class="contact-value">ilya.ksenzov.1996@gmail.com</span>
+                </div>
+            </a>
+
+            <!-- Карточка Telegram с актуальным ником ksnz1 -->
+            <a href="tg://resolve?domain=ksnz1" class="contact-card">
+                <!-- SVG Иконка самолетика -->
+                <svg class="contact-icon" viewBox="0 0 24 24">
+                    <path d="M9.78 18.65l.28-4.28 7.68-6.92c.34-.31-.07-.48-.52-.19L7.74 13.3 3.64 12c-.89-.28-.9-.89.19-1.31l16.03-6.17c.74-.27 1.39.18 1.16 1.19l-2.73 12.83c-.2.98-.79 1.22-1.61.77l-4.17-3.07-2.01 1.94c-.22.22-.41.41-.83.41z"/>
+                </svg>
+                <div class="contact-info">
+                    <span class="contact-label">Telegram</span>
+                    <span class="contact-value">Написать в чат</span>
+                </div>
+            </a>
+
         </div>
 
         <!-- Кнопка скрытой авторизации владельца -->
@@ -258,40 +312,3 @@
     <!-- Весь JavaScript-функционал -->
     <script>
         const fileInput = document.getElementById('file-input');
-        const avatarPreview = document.getElementById('avatar-preview');
-        const uploadLabel = document.getElementById('upload-label');
-
-        // Подгружаем сохраненное ранее локальное фото при открытии страницы
-        const savedImage = localStorage.getItem('owner-avatar');
-        if (savedImage) {
-            avatarPreview.setAttribute('src', savedImage);
-        }
-
-        // Функция авторизации
-        function checkOwner() {
-            const username = prompt("Введите ваш логин GitHub для проверки прав:");
-            if (username && username.toLowerCase() === 'ksenzao') {
-                alert("Доступ разрешен. Теперь вы можете загрузить фото.");
-                uploadLabel.style.display = 'flex'; 
-            } else {
-                alert("Ошибка доступа. Вы не являетесь владельцем этого репозитория.");
-                uploadLabel.style.display = 'none';
-            }
-        }
-
-        // Обработчик выбора файла и сохранения в память браузера
-        fileInput.addEventListener('change', function() {
-            const file = this.files;
-            if (file) {
-                const reader = new FileReader();
-                reader.addEventListener('load', function() {
-                    avatarPreview.setAttribute('src', this.result);
-                    localStorage.setItem('owner-avatar', this.result);
-                });
-                reader.readAsDataURL(file);
-            }
-        });
-    </script>
-
-</body>
-</html>
