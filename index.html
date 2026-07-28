@@ -189,7 +189,7 @@
             margin-right: 5px;
         }
 
-        /* Оформление для кликабельных ссылок (теперь применяется и к Telegram) */
+        /* Оформление для кликабельных ссылок */
         .contacts-block a {
             color: #a855f7;
             text-decoration: none;
@@ -247,8 +247,8 @@
         <h2>Контакты</h2>
         <div class="contacts-block">
             <p><strong>Email:</strong> <a href="mailto:ilya.ksenzov.1996@gmail.com">ilya.ksenzov.1996@gmail.com</a></p>
-            <!-- Слово Telegram обернуто в тег ссылки и теперь тоже подсвечивается фиолетовым -->
-            <p><strong>Telegram:</strong> <a href="https://t.me" target="_blank">Написать мне</a></p>
+            <!-- Прямая ссылка для принудительного открытия установленного приложения Telegram -->
+            <p><strong>Telegram:</strong> <a href="tg://resolve?domain=ksenzao">Написать мне</a></p>
         </div>
 
         <!-- Кнопка скрытой авторизации владельца -->
@@ -267,7 +267,7 @@
             avatarPreview.setAttribute('src', savedImage);
         }
 
-        // Функция авторизации (исправлена опечатка в стилях)
+        // Функция авторизации
         function checkOwner() {
             const username = prompt("Введите ваш логин GitHub для проверки прав:");
             if (username && username.toLowerCase() === 'ksenzao') {
