@@ -6,10 +6,13 @@
     <title>Резюме | Илья Ксензов</title>
     <meta name="description" content="Резюме и портфолио: Илья Ксензов — IT-специалист, Project Manager, Веб-разработчик.">
     
-    <!-- Open Graph мета-теги -->
+    <!-- Favicon -->
+    <link rel="icon" href="avatar2.jpg" type="image/jpeg">
+
+    <!-- Open Graph мета-теги (абсолютный URL для корректных превью в мессенджерах) -->
     <meta property="og:title" content="Резюме | Илья Ксензов">
     <meta property="og:description" content="IT-специалист / Project Manager / Веб-разработчик">
-    <meta property="og:image" content="avatar2.jpg">
+    <meta property="og:image" content="https://ksenzao.github.io/first-prohect/avatar2.jpg">
     <meta property="og:type" content="website">
 
     <!-- Подключение шрифта Inter -->
@@ -98,7 +101,7 @@
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
-            /* Прижимает верх к краю, опускает фото ниже, чтобы не срезалась макушка */
+            /* Позиционирование: открываем макушку */
             object-position: center top; 
             border: 4px solid #6366f1;
             box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
@@ -126,8 +129,8 @@
         /* Кнопки контактов */
         .contacts-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
             margin-bottom: 35px;
         }
 
@@ -135,10 +138,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 14px 18px;
+            padding: 12px 14px;
             border-radius: 16px;
             text-decoration: none;
             transition: all 0.3s ease;
@@ -151,8 +154,8 @@
         }
 
         .contact-svg {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             fill: #94a3b8;
             transition: fill 0.3s ease;
             flex-shrink: 0;
@@ -163,7 +166,7 @@
         }
 
         .contact-label {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             color: #f1f5f9;
             font-weight: 600;
             text-transform: uppercase;
@@ -293,6 +296,22 @@
             border-color: rgba(168, 85, 247, 0.3);
         }
 
+        /* Плавная анимация появления текста в проектах */
+        details[open] .project-content {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         summary {
             padding: 16px 20px;
             font-weight: 600;
@@ -406,6 +425,29 @@
             margin-top: 4px;
         }
 
+        .project-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #a855f7;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 12px;
+            transition: color 0.2s ease;
+        }
+
+        .project-link:hover {
+            color: #6366f1;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .contacts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding: 30px 20px;
@@ -414,7 +456,7 @@
                 top: 15px;
                 right: 15px;
             }
-            .contacts-container, .project-grid {
+            .project-grid {
                 grid-template-columns: 1fr;
             }
             h1 {
@@ -448,6 +490,11 @@
             <a href="https://t.me/ksnz1" class="contact-card" target="_blank" rel="noopener noreferrer">
                 <svg class="contact-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-.99.53-1.41.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.46-.42-1.4-.88.03-.24.36-.49.99-.75 3.88-1.69 6.46-2.8 7.74-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.19.34.02.1.04.33.02.48z"/></svg>
                 <span class="contact-label">Telegram</span>
+            </a>
+
+            <a href="https://www.linkedin.com/in/ilya-ksenzov/" class="contact-card" target="_blank" rel="noopener noreferrer">
+                <svg class="contact-svg" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+                <span class="contact-label">LinkedIn</span>
             </a>
         </div>
 
@@ -625,7 +672,7 @@
         </div>
     </div>
 
-    <!-- Скрипт мультиязычности -->
+    <!-- Скрипт мультиязычности и сохранения состояния -->
     <script>
         const translations = {
             ru: {
@@ -689,11 +736,20 @@
 
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (translations[lang][key]) {
+                if (translations[lang] && translations[lang][key]) {
                     el.innerHTML = translations[lang][key];
                 }
             });
+
+            // Сохраняем язык пользователя в LocalStorage
+            localStorage.setItem('user_lang', lang);
         }
+
+        // Автозагрузка выбранного ранее языка при старте
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('user_lang') || 'ru';
+            switchLang(savedLang);
+        });
     </script>
 </body>
 </html>
