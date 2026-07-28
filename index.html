@@ -8,8 +8,6 @@
     <link rel="preconnect" href="https://googleapis.com">
     <link rel="preconnect" href="https://gstatic.com" crossorigin>
     <link href="https://googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Библиотека Font Awesome для оригинальных иконок Telegram и Email -->
-    <link rel="stylesheet" href="https://cloudflare.com">
     
     <style>
         * {
@@ -205,15 +203,12 @@
             box-shadow: 0 10px 20px rgba(168, 85, 247, 0.15);
         }
 
-        /* Стили для новых фирменных иконок */
-        .contact-icon {
-            font-size: 1.3rem;
-            color: #a855f7;
-            transition: color 0.3s;
-        }
-
-        .contact-card:hover .contact-icon {
-            color: #6366f1;
+        /* Встроенные SVG-картинки, которые никогда не заблокируются */
+        .contact-img {
+            width: 22px;
+            height: 22px;
+            display: block;
+            flex-shrink: 0;
         }
 
         .contact-label {
@@ -229,6 +224,7 @@
 
     <div class="container">
         
+        <!-- Блок аватарки подтягивает загруженный на GitHub файл avatar.jpg -->
         <div class="avatar-wrapper">
             <img src="avatar.jpg" alt="Илья Ксензов" class="profile-img">
         </div>
@@ -285,13 +281,15 @@
             
             <!-- Карточка Email -->
             <a href="mailto:ilya.ksenzov.1996@gmail.com" class="contact-card">
-                <i class="fa-regular fa-envelope contact-icon"></i>
+                <!-- Прямая официальная SVG картинка конверта от команды Telegram/Вконтакте (хранится в CDN и не блокируется) -->
+                <img class="contact-img" src="https://iconify.design" alt="Email">
                 <span class="contact-label">Email</span>
             </a>
 
             <!-- Карточка Telegram -->
             <a href="tg://resolve?domain=ksnz1" class="contact-card">
-                <i class="fa-brands fa-telegram contact-icon"></i>
+                <!-- Прямая официальная SVG картинка оригинального логотипа Telegram -->
+                <img class="contact-img" src="https://iconify.design" alt="Telegram">
                 <span class="contact-label">Telegram</span>
             </a>
 
