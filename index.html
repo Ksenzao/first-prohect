@@ -20,18 +20,67 @@
             padding: 40px;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            text-align: center; /* Центрируем аватарку и заголовок */
+            text-align: center;
         }
-        /* Стили для вашей фотографии */
-        .profile-img {
+        
+        .avatar-wrapper {
+            position: relative;
             width: 150px;
             height: 150px;
-            border-radius: 50%; /* Делает фото круглым */
-            object-fit: cover; /* Защищает фото от искажения и растягивания */
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            border: 3px solid #3498db; /* Красивая рамка вокруг фото */
+            margin: 0 auto 20px auto;
         }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 3px solid #3498db;
+            background-color: #eef2f5;
+            display: block;
+        }
+
+        /* Кнопка изначально скрыта от всех гостей */
+        .upload-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            background-color: #3498db;
+            border-radius: 50%;
+            display: none; /* Скрыто по умолчанию */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .upload-btn::after {
+            content: '↑';
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Кнопка "Войти как владелец" для вас */
+        .admin-login-btn {
+            background: none;
+            border: none;
+            color: #bdc3c7;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .admin-login-btn:hover {
+            color: #7f8c8d;
+        }
+
         h1 {
             color: #2c3e50;
             margin-bottom: 5px;
@@ -46,10 +95,10 @@
             padding-bottom: 5px;
             color: #2c3e50;
             margin-top: 30px;
-            text-align: left; /* Заголовки разделов оставляем слева */
+            text-align: left;
         }
         p, ul {
-            text-align: left; /* Текст оставляем выровненным по левому краю */
+            text-align: left;
         }
         ul {
             padding-left: 20px;
@@ -59,8 +108,12 @@
 <body>
 
     <div class="container">
-        <!-- Ваша фотография. Убедитесь, что загруженный файл в GitHub называется точно так же -->
-        <img src="avatar.jpg" alt="Мое фото" class="profile-img">
+        
+        <div class="avatar-wrapper">
+            <img id="avatar-preview" src="" alt="" class="profile-img">
+            <label id="upload-label" for="file-input" class="upload-btn" title="Загрузить фото"></label>
+            <input type="file" id="file-input" accept="image/*">
+        </div>
 
         <h1>Илья Ксензов</h1>
         <div class="subtitle">Начинающий веб-разработчик</div>
@@ -78,8 +131,50 @@
         <h2>Контакты</h2>
         <p><strong>Email:</strong> myemail@example.com</p>
         <p><strong>Telegram:</strong> @my_username</p>
+
+        <!-- Скрытая маленькая кнопка авторизации в самом низу страницы -->
+        <button class="admin-login-btn" onclick="checkOwner()">Режим владельца</button>
     </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const avatarPreview = document.getElementById('avatar-preview');
+        const uploadLabel = document.getElementById('upload-label');
+
+        // Попытка загрузить ранее сохраненное локально фото (только на вашем устройстве)
+        const savedImage = localStorage.getItem('owner-avatar');
+        if (savedImage) {
+            avatarPreview.setAttribute('src', savedImage);
+        }
+
+        // Проверка: вы ли это?
+        function checkOwner() {
+            const username = prompt("Введите ваш логин GitHub для проверки прав:");
+            
+            // Защита: кнопка появится только если ввести ваш точный ник Ksenzao
+            if (username && username.toLowerCase() === 'ksenzao') {
+                alert("Доступ разрешен. Теперь вы можете загрузить фото.");
+                uploadLabel.style.display = 'flex'; // Показываем стрелочку загрузки
+            } else {
+                alert("Ошибка доступа. Вы не являетесь владельцем этого репозитория.");
+                uploadLabel.style.display = 'none';
+            }
+        }
+
+        // Логика чтения файла и его сохранения в памяти вашего браузера
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.addEventListener('load', function() {
+                    avatarPreview.setAttribute('src', this.result);
+                    // Сохраняем фото в локальную память вашего браузера, чтобы оно не исчезало при перезагрузке
+                    localStorage.setItem('owner-avatar', this.result);
+                });
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 
 </body>
 </html>
-
