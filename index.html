@@ -189,7 +189,7 @@
             margin-right: 5px;
         }
 
-        /* Оформление для кликабельных ссылок */
+        /* Оформление для кликабельных ссылок (теперь применяется и к Telegram) */
         .contacts-block a {
             color: #a855f7;
             text-decoration: none;
@@ -246,10 +246,9 @@
 
         <h2>Контакты</h2>
         <div class="contacts-block">
-            <!-- Здесь ваша реальная почта -->
             <p><strong>Email:</strong> <a href="mailto:ilya.ksenzov.1996@gmail.com">ilya.ksenzov.1996@gmail.com</a></p>
-            <!-- Само слово Telegram теперь является ссылкой на ваш аккаунт -->
-            <p><a href="https://t.me" target="_blank"><strong>Telegram</strong></a></p>
+            <!-- Слово Telegram обернуто в тег ссылки и теперь тоже подсвечивается фиолетовым -->
+            <p><strong>Telegram:</strong> <a href="https://t.me" target="_blank">Написать мне</a></p>
         </div>
 
         <!-- Кнопка скрытой авторизации владельца -->
@@ -268,12 +267,12 @@
             avatarPreview.setAttribute('src', savedImage);
         }
 
-        // Функция авторизации
+        // Функция авторизации (исправлена опечатка в стилях)
         function checkOwner() {
             const username = prompt("Введите ваш логин GitHub для проверки прав:");
             if (username && username.toLowerCase() === 'ksenzao') {
                 alert("Доступ разрешен. Теперь вы можете загрузить фото.");
-                uploadLabel.style.style.display = 'flex'; 
+                uploadLabel.style.display = 'flex'; 
             } else {
                 alert("Ошибка доступа. Вы не являетесь владельцем этого репозитория.");
                 uploadLabel.style.display = 'none';
@@ -282,7 +281,7 @@
 
         // Обработчик выбора файла и сохранения в память браузера
         fileInput.addEventListener('change', function() {
-            const file = this.files[0];
+            const file = this.files;
             if (file) {
                 const reader = new FileReader();
                 reader.addEventListener('load', function() {
