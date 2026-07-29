@@ -7,6 +7,7 @@ enum AuthScreen {
     case selectCity
     case signUp
     case verifyOTP
+    case createProfile
 }
 
 struct AuthView: View {
@@ -41,26 +42,32 @@ struct AuthView: View {
     
     var body: some View {
         ZStack {
-            // Фирменный градиентный фон
-            LinearGradient(
-                stops: [
-                    Gradient.Stop(color: Color("AppBackground1"), location: 0.1),
-                    Gradient.Stop(color: Color("AppBackground2"), location: 0.9)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            // Фирменный градиентный фон (скрываем на экране создания профиля, так как у него белый фон)
+            if currentScreen != .createProfile {
+                LinearGradient(
+                    stops: [
+                        Gradient.Stop(color: Color("AppBackground1"), location: 0.1),
+                        Gradient.Stop(color: Color("AppBackground2"), location: 0.9)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
             
-            ScrollView(showsIndicators: false) {
-                VStack {
-                    Spacer(minLength: 40)
-                    
-                    currentScreenView
-                    
-                    Spacer(minLength: 40)
+            if currentScreen == .createProfile {
+                CreateProfileView()
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack {
+                        Spacer(minLength: 40)
+                        
+                        currentScreenView
+                        
+                        Spacer(minLength: 40)
+                    }
+                    .padding(.horizontal, 24)
                 }
-                .padding(.horizontal, 24)
             }
         }
     }
@@ -77,6 +84,8 @@ struct AuthView: View {
             signUpCard
         case .verifyOTP:
             otpCard
+        case .createProfile:
+            CreateProfileView()
         }
     }
     
@@ -141,7 +150,10 @@ struct AuthView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             
             Button(action: {
-                // Логика входа
+                // Переход к созданию профиля питомца
+                withAnimation {
+                    currentScreen = .createProfile
+                }
             }) {
                 Text("Войти")
                     .font(.system(size: 16, weight: .bold))
