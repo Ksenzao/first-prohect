@@ -1,10 +1,12 @@
 import SwiftUI
+import FirebaseAuth
 
 // MARK: - Модель состояния экранов авторизации
 enum AuthScreen {
     case login
     case selectCity
     case signUp
+    case verifyOTP
 }
 
 struct AuthView: View {
@@ -14,12 +16,28 @@ struct AuthView: View {
     @State private var phoneNumber = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var isPasswordVisible = false
+    @State private var isConfirmPasswordVisible = false
+    
     @State private var name = ""
     @State private var email = ""
     @State private var selectedCity = "Минск"
     @State private var isAgreed = false
     
+    // Поля OTP / Верификации
+    @State private var timeRemaining = 60
+    @State private var timerActive = false
+    @State private var authErrorMessage = ""
+    
     let belarusCities = ["Минск", "Брест", "Гродно", "Гомель", "Могилёв", "Витебск"]
+    
+    // MARK: - Валидация пароля
+    private var isMinLength: Bool { password.count >= 8 }
+    private var hasUppercase: Bool { password.range(of: "[A-ZА-Я]", options: .regularExpression) != nil }
+    private var hasLowercase: Bool { password.range(of: "[a-zа-я]", options: .regularExpression) != nil }
+    private var hasNumberOrSymbol: Bool { password.range(of: "[0-9!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]", options: .regularExpression) != nil }
+    private var isPasswordValid: Bool { isMinLength && hasUppercase && hasLowercase && hasNumberOrSymbol }
+    private var isPasswordsMatch: Bool { !password.isEmpty && password == confirmPassword }
     
     var body: some View {
         ZStack {
@@ -38,7 +56,6 @@ struct AuthView: View {
                 VStack {
                     Spacer(minLength: 40)
                     
-                    // Содержимое текущего экрана
                     currentScreenView
                     
                     Spacer(minLength: 40)
@@ -48,7 +65,7 @@ struct AuthView: View {
         }
     }
     
-    // MARK: - Динамический выбор экрана
+    // MARK: - Выбор экрана
     @ViewBuilder
     private var currentScreenView: some View {
         switch currentScreen {
@@ -58,13 +75,14 @@ struct AuthView: View {
             selectCityCard
         case .signUp:
             signUpCard
+        case .verifyOTP:
+            otpCard
         }
     }
     
     // MARK: - 1. Экран Входа (Login)
     private var loginCard: some View {
         VStack(spacing: 20) {
-            // Шапка бренда
             VStack(spacing: 8) {
                 Image(systemName: "pawprint.circle.fill")
                     .resizable()
@@ -81,7 +99,6 @@ struct AuthView: View {
                 .font(.system(size: 22, weight: .bold))
                 .foregroundColor(.black.opacity(0.8))
             
-            // Поле телефона (+375)
             HStack {
                 Text("+375")
                     .fontWeight(.bold)
@@ -99,20 +116,30 @@ struct AuthView: View {
             .cornerRadius(16)
             .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
             
-            // Поле пароля
-            SecureField("Пароль", text: $password)
-                .padding(.horizontal, 16)
-                .frame(height: 50)
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+            // Пароль
+            HStack {
+                if isPasswordVisible {
+                    TextField("Пароль", text: $password)
+                } else {
+                    SecureField("Пароль", text: $password)
+                }
+                
+                Button(action: { isPasswordVisible.toggle() }) {
+                    Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 50)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
             
             Button("Забыли пароль?") { }
                 .font(.footnote)
                 .foregroundColor(Color("AppAccent"))
                 .frame(maxWidth: .infinity, alignment: .trailing)
             
-            // Кнопка Входа
             Button(action: {
                 // Логика входа
             }) {
@@ -127,7 +154,6 @@ struct AuthView: View {
             }
             .padding(.top, 10)
             
-            // Переход на Регистрацию
             HStack {
                 Text("Впервые в PetsDate?")
                     .foregroundColor(.gray)
@@ -146,7 +172,7 @@ struct AuthView: View {
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
     }
     
-    // MARK: - 2. Экран выбора города (Беларусь)
+    // MARK: - 2. Экран выбора города
     private var selectCityCard: some View {
         VStack(spacing: 20) {
             HStack {
@@ -161,7 +187,6 @@ struct AuthView: View {
                 Spacer()
             }
             
-            // Заглушка карты Беларуси
             ZStack {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color("AppBackground1").opacity(0.4))
@@ -181,7 +206,6 @@ struct AuthView: View {
                 .font(.subheadline)
                 .foregroundColor(.gray)
             
-            // Выпадающий список городов
             Picker("Город", selection: $selectedCity) {
                 ForEach(belarusCities, id: \.self) { city in
                     Text(city).tag(city)
@@ -219,9 +243,9 @@ struct AuthView: View {
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
     }
     
-    // MARK: - 3. Экран ввода данных (Sign Up)
+    // MARK: - 3. Экран ввода данных и отправки Email через Firebase
     private var signUpCard: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             HStack {
                 Button(action: { withAnimation { currentScreen = .selectCity } }) {
                     Image(systemName: "chevron.left")
@@ -234,7 +258,6 @@ struct AuthView: View {
                 Spacer()
             }
             
-            // Поле Имени
             TextField("Имя", text: $name)
                 .padding(.horizontal, 16)
                 .frame(height: 48)
@@ -242,16 +265,15 @@ struct AuthView: View {
                 .cornerRadius(14)
                 .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
-            // Поле Email
             TextField("Email", text: $email)
                 .keyboardType(.emailAddress)
+                .autocapitalization(.none)
                 .padding(.horizontal, 16)
                 .frame(height: 48)
                 .background(Color.white)
                 .cornerRadius(14)
                 .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
-            // Телефон (+375)
             HStack {
                 Text("+375")
                     .fontWeight(.bold)
@@ -269,21 +291,64 @@ struct AuthView: View {
             .cornerRadius(14)
             .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
-            // Пароль
-            SecureField("Пароль", text: $password)
-                .padding(.horizontal, 16)
-                .frame(height: 48)
-                .background(Color.white)
-                .cornerRadius(14)
-                .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
+            // Ввод пароля
+            HStack {
+                if isPasswordVisible {
+                    TextField("Пароль", text: $password)
+                } else {
+                    SecureField("Пароль", text: $password)
+                }
+                
+                Button(action: { isPasswordVisible.toggle() }) {
+                    Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 48)
+            .background(Color.white)
+            .cornerRadius(14)
+            .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
-            // Подтверждение пароля
-            SecureField("Повторите пароль", text: $confirmPassword)
-                .padding(.horizontal, 16)
-                .frame(height: 48)
-                .background(Color.white)
-                .cornerRadius(14)
-                .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
+            // Валидация пароля
+            VStack(spacing: 6) {
+                HStack {
+                    validationItem(isMet: isMinLength, text: "Не менее 8 символов")
+                    Spacer()
+                    validationItem(isMet: hasUppercase, text: "Заглавная буква")
+                }
+                HStack {
+                    validationItem(isMet: hasNumberOrSymbol, text: "Цифра или символ")
+                    Spacer()
+                    validationItem(isMet: hasLowercase, text: "Строчная буква")
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+            
+            // Повтор пароля
+            HStack {
+                if isConfirmPasswordVisible {
+                    TextField("Повторите пароль", text: $confirmPassword)
+                } else {
+                    SecureField("Повторите пароль", text: $confirmPassword)
+                }
+                
+                if !confirmPassword.isEmpty {
+                    Image(systemName: isPasswordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundColor(isPasswordsMatch ? .green : .red)
+                }
+                
+                Button(action: { isConfirmPasswordVisible.toggle() }) {
+                    Image(systemName: isConfirmPasswordVisible ? "eye.fill" : "eye.slash.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 48)
+            .background(Color.white)
+            .cornerRadius(14)
+            .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
             // Чекбокс согласия
             HStack(alignment: .top, spacing: 10) {
@@ -297,20 +362,49 @@ struct AuthView: View {
                     .font(.caption)
                     .foregroundColor(.gray)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 2)
             
-            // Кнопка Зарегистрироваться
+            if !authErrorMessage.isEmpty {
+                Text(authErrorMessage)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
+            
+            // КНОПКА РЕГИСТРАЦИИ (Firebase)
             Button(action: {
-                // Регистрация
+                authErrorMessage = ""
+                
+                // 1. Создаем аккаунт в Firebase Auth
+                Auth.auth().createUser(withEmail: email, password: password) { result, error in
+                    if let error = error {
+                        authErrorMessage = error.localizedDescription
+                        print("Ошибка Firebase: \(error.localizedDescription)")
+                        return
+                    }
+                    
+                    // 2. Отправляем реальное письмо верификации на Email
+                    Auth.auth().currentUser?.sendEmailVerification { error in
+                        if let error = error {
+                            authErrorMessage = error.localizedDescription
+                            print("Ошибка отправки письма: \(error.localizedDescription)")
+                        } else {
+                            print("Письмо успешно отправлено на \(email)!")
+                            startOTPTimer()
+                            withAnimation { currentScreen = .verifyOTP }
+                        }
+                    }
+                }
             }) {
                 Text("Зарегистрироваться")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .background(Color("AppAccent"))
+                    .background(canSignUp ? Color("AppAccent") : Color.gray.opacity(0.4))
                     .cornerRadius(26)
             }
+            .disabled(!canSignUp)
             
             HStack {
                 Text("Уже есть аккаунт?")
@@ -327,6 +421,107 @@ struct AuthView: View {
         .background(Color.white.opacity(0.95))
         .cornerRadius(32)
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
+    }
+    
+    // Элемент списка правил
+    private func validationItem(isMet: Bool, text: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: isMet ? "checkmark" : "xmark")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(isMet ? .green : .gray.opacity(0.6))
+            
+            Text(text)
+                .font(.system(size: 12))
+                .foregroundColor(isMet ? .black.opacity(0.8) : .gray)
+        }
+    }
+    
+    // Разрешение на клик регистрации
+    private var canSignUp: Bool {
+        !name.isEmpty && !email.isEmpty && !phoneNumber.isEmpty && isPasswordValid && isPasswordsMatch && isAgreed
+    }
+    
+    // MARK: - 4. Экран ожидания подтверждения Email (otpCard)
+    private var otpCard: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Button(action: { withAnimation { currentScreen = .signUp } }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title3.weight(.bold))
+                        .foregroundColor(Color("AppAccent"))
+                }
+                Spacer()
+            }
+            
+            Text("Верификация Email")
+                .font(.system(size: 26, weight: .bold))
+                .foregroundColor(.black.opacity(0.85))
+            
+            Text("Мы отправили ссылку для подтверждения на ваш email:\n\(email)")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+            
+            Button("Изменить Email") {
+                withAnimation { currentScreen = .signUp }
+            }
+            .font(.footnote)
+            .fontWeight(.bold)
+            .foregroundColor(Color("AppAccent"))
+            
+            Image(systemName: "envelope.badge.shield.half.filled")
+                .font(.system(size: 60))
+                .foregroundColor(Color("AppAccent"))
+                .padding(.vertical, 10)
+            
+            if timeRemaining > 0 {
+                Text(String(format: "Повторная отправка через 00:%02d сек", timeRemaining))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.gray)
+                    .task {
+                        while timeRemaining > 0 && timerActive {
+                            try? await Task.sleep(nanoseconds: 1_000_000_000)
+                            timeRemaining -= 1
+                        }
+                    }
+            } else {
+                Button("Отправить письмо повторно") {
+                    Auth.auth().currentUser?.sendEmailVerification { error in
+                        if error == nil {
+                            startOTPTimer()
+                        }
+                    }
+                }
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(Color("AppAccent"))
+            }
+            
+            // КНОПКА ВОЗВРАТА К ЭКРАНУ ЛОГИНА
+            Button(action: {
+                withAnimation {
+                    currentScreen = .login
+                }
+            }) {
+                Text("Перейти к входу")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(Color("AppAccent"))
+                    .cornerRadius(26)
+            }
+            .padding(.top, 10)
+        }
+        .padding(24)
+        .background(Color.white.opacity(0.95))
+        .cornerRadius(32)
+        .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
+    }
+    
+    private func startOTPTimer() {
+        timeRemaining = 60
+        timerActive = true
     }
 }
 
