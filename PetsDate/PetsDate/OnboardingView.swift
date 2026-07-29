@@ -31,11 +31,10 @@ struct OnboardingView: View {
     
     var body: some View {
         if isCompleted {
-            Text("Главный экран свайпов")
-                .font(.title)
+            AuthView()
         } else {
             ZStack {
-                // Новый теплый естественный градиент
+                // Наш естественный градиент фона
                 LinearGradient(
                     stops: [
                         Gradient.Stop(color: Color("AppBackground1"), location: 0.1),
