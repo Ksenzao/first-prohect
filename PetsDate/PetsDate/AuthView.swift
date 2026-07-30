@@ -1,17 +1,20 @@
 import SwiftUI
 import FirebaseAuth
 
-// MARK: - Модель состояния экранов авторизации
 enum AuthScreen {
     case login
     case selectCity
     case signUp
     case verifyOTP
     case createProfile
+    case mainSwipe
 }
 
 struct AuthView: View {
     @State private var currentScreen: AuthScreen = .login
+    
+    // Единственная точка правды для всего профиля
+    @State private var currentPetProfile = PetProfile()
     
     // Поля формы
     @State private var phoneNumber = ""
@@ -25,14 +28,13 @@ struct AuthView: View {
     @State private var selectedCity = "Минск"
     @State private var isAgreed = false
     
-    // Поля OTP / Верификации
+    // Поля OTP
     @State private var timeRemaining = 60
     @State private var timerActive = false
     @State private var authErrorMessage = ""
     
     let belarusCities = ["Минск", "Брест", "Гродно", "Гомель", "Могилёв", "Витебск"]
     
-    // MARK: - Валидация пароля
     private var isMinLength: Bool { password.count >= 8 }
     private var hasUppercase: Bool { password.range(of: "[A-ZА-Я]", options: .regularExpression) != nil }
     private var hasLowercase: Bool { password.range(of: "[a-zа-я]", options: .regularExpression) != nil }
@@ -42,8 +44,7 @@ struct AuthView: View {
     
     var body: some View {
         ZStack {
-            // Фирменный градиентный фон (скрываем на экране создания профиля)
-            if currentScreen != .createProfile {
+            if currentScreen != .createProfile && currentScreen != .mainSwipe {
                 LinearGradient(
                     stops: [
                         Gradient.Stop(color: Color("AppBackground1"), location: 0.1),
@@ -56,18 +57,28 @@ struct AuthView: View {
             }
             
             if currentScreen == .createProfile {
-                CreateProfileView(onBackToLogin: {
-                    withAnimation {
-                        currentScreen = .login
+                CreateProfileView(
+                    initialProfile: currentPetProfile,
+                    onBackToLogin: {
+                        withAnimation { currentScreen = .login }
+                    },
+                    onFinish: { createdProfile in
+                        currentPetProfile = createdProfile
+                        withAnimation { currentScreen = .mainSwipe }
                     }
-                })
+                )
+            } else if currentScreen == .mainSwipe {
+                MainSwipeView(
+                    userProfile: currentPetProfile,
+                    onLogout: {
+                        withAnimation { currentScreen = .login }
+                    }
+                )
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack {
                         Spacer(minLength: 40)
-                        
                         currentScreenView
-                        
                         Spacer(minLength: 40)
                     }
                     .padding(.horizontal, 24)
@@ -76,7 +87,6 @@ struct AuthView: View {
         }
     }
     
-    // MARK: - Выбор экрана
     @ViewBuilder
     private var currentScreenView: some View {
         switch currentScreen {
@@ -89,15 +99,22 @@ struct AuthView: View {
         case .verifyOTP:
             otpCard
         case .createProfile:
-            CreateProfileView(onBackToLogin: {
-                withAnimation {
-                    currentScreen = .login
+            CreateProfileView(
+                initialProfile: currentPetProfile,
+                onBackToLogin: { withAnimation { currentScreen = .login } },
+                onFinish: { createdProfile in
+                    currentPetProfile = createdProfile
+                    withAnimation { currentScreen = .mainSwipe }
                 }
-            })
+            )
+        case .mainSwipe:
+            MainSwipeView(
+                userProfile: currentPetProfile,
+                onLogout: { withAnimation { currentScreen = .login } }
+            )
         }
     }
     
-    // MARK: - 1. Экран Входа (Login)
     private var loginCard: some View {
         VStack(spacing: 20) {
             VStack(spacing: 8) {
@@ -133,7 +150,6 @@ struct AuthView: View {
             .cornerRadius(16)
             .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
             
-            // Пароль
             HStack {
                 if isPasswordVisible {
                     TextField("Пароль", text: $password)
@@ -158,10 +174,11 @@ struct AuthView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             
             Button(action: {
-                // Переход к созданию профиля питомца
-                withAnimation {
-                    currentScreen = .createProfile
+                // Если данные не заполнялись при регистрации, подставим номер
+                if currentPetProfile.ownerPhone.isEmpty {
+                    currentPetProfile.ownerPhone = "+375 " + phoneNumber
                 }
+                withAnimation { currentScreen = .mainSwipe }
             }) {
                 Text("Войти")
                     .font(.system(size: 16, weight: .bold))
@@ -192,7 +209,6 @@ struct AuthView: View {
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
     }
     
-    // MARK: - 2. Экран выбора города
     private var selectCityCard: some View {
         VStack(spacing: 20) {
             HStack {
@@ -235,6 +251,7 @@ struct AuthView: View {
             .frame(height: 120)
             
             Button(action: {
+                currentPetProfile.ownerCity = selectedCity
                 withAnimation { currentScreen = .signUp }
             }) {
                 Text("Продолжить")
@@ -263,7 +280,6 @@ struct AuthView: View {
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
     }
     
-    // MARK: - 3. Экран ввода данных и отправки Email через Firebase
     private var signUpCard: some View {
         VStack(spacing: 14) {
             HStack {
@@ -311,7 +327,6 @@ struct AuthView: View {
             .cornerRadius(14)
             .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
-            // Ввод пароля
             HStack {
                 if isPasswordVisible {
                     TextField("Пароль", text: $password)
@@ -330,7 +345,6 @@ struct AuthView: View {
             .cornerRadius(14)
             .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
-            // Валидация пароля
             VStack(spacing: 6) {
                 HStack {
                     validationItem(isMet: isMinLength, text: "Не менее 8 символов")
@@ -346,7 +360,6 @@ struct AuthView: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
             
-            // Повтор пароля
             HStack {
                 if isConfirmPasswordVisible {
                     TextField("Повторите пароль", text: $confirmPassword)
@@ -370,7 +383,6 @@ struct AuthView: View {
             .cornerRadius(14)
             .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
             
-            // Чекбокс согласия
             HStack(alignment: .top, spacing: 10) {
                 Button(action: { isAgreed.toggle() }) {
                     Image(systemName: isAgreed ? "checkmark.square.fill" : "square")
@@ -391,11 +403,15 @@ struct AuthView: View {
                     .multilineTextAlignment(.center)
             }
             
-            // КНОПКА РЕГИСТРАЦИИ (Firebase)
             Button(action: {
                 authErrorMessage = ""
                 
-                // 1. Создаем аккаунт в Firebase Auth
+                // Фиксируем данные владельца в профиль
+                currentPetProfile.ownerName = name
+                currentPetProfile.ownerEmail = email
+                currentPetProfile.ownerPhone = "+375 " + phoneNumber
+                currentPetProfile.ownerCity = selectedCity
+                
                 Auth.auth().createUser(withEmail: email, password: password) { result, error in
                     if let error = error {
                         authErrorMessage = error.localizedDescription
@@ -403,13 +419,10 @@ struct AuthView: View {
                         return
                     }
                     
-                    // 2. Отправляем реальное письмо верификации на Email
                     Auth.auth().currentUser?.sendEmailVerification { error in
                         if let error = error {
                             authErrorMessage = error.localizedDescription
-                            print("Ошибка отправки письма: \(error.localizedDescription)")
                         } else {
-                            print("Письмо успешно отправлено на \(email)!")
                             startOTPTimer()
                             withAnimation { currentScreen = .verifyOTP }
                         }
@@ -443,7 +456,6 @@ struct AuthView: View {
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
     }
     
-    // Элемент списка правил
     private func validationItem(isMet: Bool, text: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: isMet ? "checkmark" : "xmark")
@@ -456,12 +468,10 @@ struct AuthView: View {
         }
     }
     
-    // Разрешение на клик регистрации
     private var canSignUp: Bool {
         !name.isEmpty && !email.isEmpty && !phoneNumber.isEmpty && isPasswordValid && isPasswordsMatch && isAgreed
     }
     
-    // MARK: - 4. Экран ожидания подтверждения Email (otpCard)
     private var otpCard: some View {
         VStack(spacing: 20) {
             HStack {
@@ -517,13 +527,12 @@ struct AuthView: View {
                 .foregroundColor(Color("AppAccent"))
             }
             
-            // КНОПКА ВОЗВРАТА К ЭКРАНУ ЛОГИНА
             Button(action: {
                 withAnimation {
-                    currentScreen = .login
+                    currentScreen = .createProfile
                 }
             }) {
-                Text("Перейти к входу")
+                Text("Перейти к созданию профиля")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)

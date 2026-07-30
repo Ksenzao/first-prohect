@@ -2,9 +2,12 @@ import SwiftUI
 import PhotosUI
 
 struct CreateProfileView: View {
-    // Callback для возврата на логин или завершения
+    // Принимаем базовый профиль с данными владельца
+    var initialProfile: PetProfile = PetProfile()
+    
+    // Callback для возврата на логин или передача собранного профиля
     var onBackToLogin: () -> Void = {}
-    var onFinish: () -> Void = {}
+    var onFinish: (PetProfile) -> Void = { _ in }
     
     // MARK: - Переменные состояния
     @State private var currentStep: Int = 1
@@ -78,7 +81,6 @@ struct CreateProfileView: View {
     @State private var prefMaxAge: Int = 5
     @State private var prefGender: String = "Все"
     
-    // MARK: - Динамический выбор пород
     var currentPopularBreeds: [String] {
         switch selectedPetType {
         case "Кошка": return popularCatBreeds
@@ -117,7 +119,6 @@ struct CreateProfileView: View {
         }
     }
     
-    // Валидация кнопки "Продолжить"
     var isNextButtonEnabled: Bool {
         switch currentStep {
         case 1: return true
@@ -139,15 +140,7 @@ struct CreateProfileView: View {
     
     var body: some View {
         ZStack {
-            LinearGradient(
-                stops: [
-                    Gradient.Stop(color: Color("AppBackground1"), location: 0.1),
-                    Gradient.Stop(color: Color("AppBackground2"), location: 0.9)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            backgroundGradient
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
@@ -175,7 +168,6 @@ struct CreateProfileView: View {
                 .padding(.horizontal, 24)
             }
         }
-        // Пикеры для фото питомца
         .confirmationDialog("Выберите источник", isPresented: $showSourceDialog, titleVisibility: .hidden) {
             Button("Сделать фото") { showCameraPicker = true }
             Button("Выбрать из медиатеки") { showImagePicker = true }
@@ -210,6 +202,18 @@ struct CreateProfileView: View {
         .sheet(isPresented: $showVaccineCameraPicker) {
             CameraPickerView { capturedImage in vaccineCertificatePhoto = capturedImage }
         }
+    }
+    
+    private var backgroundGradient: some View {
+        LinearGradient(
+            stops: [
+                Gradient.Stop(color: Color("AppBackground1"), location: 0.1),
+                Gradient.Stop(color: Color("AppBackground2"), location: 0.9)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
     }
     
     @ViewBuilder
@@ -725,7 +729,26 @@ struct CreateProfileView: View {
                     .underline()
             }
             
-            Button(action: { onFinish() }) {
+            Button(action: {
+                var finalProfile = initialProfile
+                finalProfile.petType = selectedPetType
+                finalProfile.breed = breedQuery
+                finalProfile.petName = petName
+                finalProfile.mainPhoto = mainPhoto
+                finalProfile.additionalPhotos = additionalPhotos
+                finalProfile.gender = selectedGender
+                finalProfile.ageYears = ageYears
+                finalProfile.ageMonths = ageMonths
+                finalProfile.heightCm = heightCm
+                finalProfile.weightKg = weightKg
+                finalProfile.traits = selectedTraits
+                finalProfile.bioText = bioText
+                finalProfile.isVaccinated = (isVaccinated == true)
+                finalProfile.vaccineCertificatePhoto = vaccineCertificatePhoto
+                finalProfile.vaccineDate = vaccineDate
+                
+                onFinish(finalProfile)
+            }) {
                 Text("Начать знакомства 🐾")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
