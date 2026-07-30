@@ -42,7 +42,7 @@ struct AuthView: View {
     
     var body: some View {
         ZStack {
-            // Фирменный градиентный фон (скрываем на экране создания профиля, так как у него белый фон)
+            // Фирменный градиентный фон (скрываем на экране создания профиля)
             if currentScreen != .createProfile {
                 LinearGradient(
                     stops: [
@@ -56,7 +56,11 @@ struct AuthView: View {
             }
             
             if currentScreen == .createProfile {
-                CreateProfileView()
+                CreateProfileView(onBackToLogin: {
+                    withAnimation {
+                        currentScreen = .login
+                    }
+                })
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack {
@@ -85,7 +89,11 @@ struct AuthView: View {
         case .verifyOTP:
             otpCard
         case .createProfile:
-            CreateProfileView()
+            CreateProfileView(onBackToLogin: {
+                withAnimation {
+                    currentScreen = .login
+                }
+            })
         }
     }
     
