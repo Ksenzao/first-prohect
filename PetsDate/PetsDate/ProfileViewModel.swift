@@ -5,10 +5,7 @@ import FirebaseFirestore
 import FirebaseAuth
 
 final class ProfileViewModel: ObservableObject {
-    // Единый источник истины для профиля
     @Published var profile: PetProfile
-    
-    // Состояния загрузки
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     
@@ -35,7 +32,7 @@ final class ProfileViewModel: ObservableObject {
             
             guard let data = document?.data(), document?.exists == true else { return }
             
-            // Заполняем данные профиля из документа
+            // Заполняем текстовые данные профиля
             self.profile.petName = data["petName"] as? String ?? ""
             self.profile.petType = data["petType"] as? String ?? "Собака"
             self.profile.breed = data["breed"] as? String ?? ""
@@ -57,62 +54,20 @@ final class ProfileViewModel: ObservableObject {
             self.profile.ownerPhone = data["ownerPhone"] as? String ?? ""
             self.profile.ownerCity = data["ownerCity"] as? String ?? "Минск"
             
-            // Асинхронно загружаем главное фото по URL, если оно есть
-            if let mainPhotoURLString = data["mainPhotoURL"] as? String, let url = URL(string: mainPhotoURLString) {
-                Task {
-                    if let (data, _) = try? await URLSession.shared.data(from: url),
-                       let downloadedImage = UIImage(data: data) {
-                        await MainActor.run {
-                            self.profile.mainPhoto = downloadedImage
-                        }
-                    }
-                }
+            // Декодирование фото из Base64
+            if let base64String = data["mainPhotoURL"] as? String, !base64String.isEmpty,
+               let imageData = Data(base64Encoded: base64String),
+               let downloadedImage = UIImage(data: imageData) {
+                self.profile.mainPhoto = downloadedImage
             }
         }
     }
     
-    // MARK: - Обновление данных владельца
     @MainActor
     func updateOwnerInfo(name: String, email: String, phone: String, city: String) {
         profile.ownerName = name
         profile.ownerEmail = email
         profile.ownerPhone = phone
         profile.ownerCity = city
-    }
-    
-    // MARK: - Обновление данных питомца
-    @MainActor
-    func updatePetInfo(
-        petType: String,
-        breed: String,
-        petName: String,
-        mainPhoto: UIImage?,
-        additionalPhotos: [UIImage?],
-        gender: String,
-        ageYears: String,
-        ageMonths: String,
-        heightCm: String,
-        weightKg: String,
-        traits: Set<String>,
-        bioText: String,
-        isVaccinated: Bool,
-        vaccineCertificatePhoto: UIImage?,
-        vaccineDate: Date
-    ) {
-        profile.petType = petType
-        profile.breed = breed
-        profile.petName = petName
-        profile.mainPhoto = mainPhoto
-        profile.additionalPhotos = additionalPhotos
-        profile.gender = gender
-        profile.ageYears = ageYears
-        profile.ageMonths = ageMonths
-        profile.heightCm = heightCm
-        profile.weightKg = weightKg
-        profile.traits = traits
-        profile.bioText = bioText
-        profile.isVaccinated = isVaccinated
-        profile.vaccineCertificatePhoto = vaccineCertificatePhoto
-        profile.vaccineDate = vaccineDate
     }
 }

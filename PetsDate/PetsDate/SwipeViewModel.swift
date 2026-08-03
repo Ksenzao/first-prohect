@@ -49,25 +49,14 @@ final class SwipeViewModel: ObservableObject {
                         profile.ownerCity = data["ownerCity"] as? String ?? "Минск"
                         profile.isVaccinated = data["isVaccinated"] as? Bool ?? false
                         
-                        // Сохраняем ссылку на картинку в виде строки во временный параметр или сразу загружаем
-                        let photoURLString = data["mainPhotoURL"] as? String
+                        // Декодирование фото из Base64 для карточки
+                        if let base64String = data["mainPhotoURL"] as? String, !base64String.isEmpty,
+                           let imageData = Data(base64Encoded: base64String),
+                           let downloadedImage = UIImage(data: imageData) {
+                            profile.mainPhoto = downloadedImage
+                        }
                         
                         fetchedProfiles.append(profile)
-                        
-                        // Если есть ссылка на главное фото — загружаем фоново
-                        if let urlString = photoURLString, let url = URL(string: urlString) {
-                            let targetName = profile.petName
-                            Task {
-                                if let (data, _) = try? await URLSession.shared.data(from: url),
-                                   let downloadedImage = UIImage(data: data) {
-                                    await MainActor.run {
-                                        if let index = self.candidateProfiles.firstIndex(where: { $0.petName == targetName }) {
-                                            self.candidateProfiles[index].mainPhoto = downloadedImage
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                     
                     self.candidateProfiles = fetchedProfiles
@@ -75,7 +64,6 @@ final class SwipeViewModel: ObservableObject {
             }
     }
     
-    // MARK: - Обработка лайка
     func swipeRight(profile: PetProfile) {
         guard Auth.auth().currentUser?.uid != nil else { return }
         
@@ -89,7 +77,6 @@ final class SwipeViewModel: ObservableObject {
         removeTopCard()
     }
     
-    // MARK: - Обработка дизлайка
     func swipeLeft(profile: PetProfile) {
         removeTopCard()
     }
