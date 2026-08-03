@@ -1,55 +1,71 @@
 import SwiftUI
-import Combine
+import FirebaseAuth
+import FirebaseFirestore
 
 struct ChatDetailView: View {
-    @StateObject private var chatVM: ChatViewModel
+    let targetProfile: PetProfile
     @Environment(\.dismiss) private var dismiss
     
+    @State private var messages: [ChatMessage] = []
+    @State private var messageText: String = ""
+    @State private var listener: ListenerRegistration? = nil
+    
+    private let db = Firestore.firestore()
     let appAccent = Color(red: 0.95, green: 0.5, blue: 0.2)
     let txtColor = Color(red: 0.3, green: 0.2, blue: 0.15)
     
-    init(targetProfile: PetProfile) {
-        _chatVM = StateObject(wrappedValue: ChatViewModel(targetProfile: targetProfile))
+    var currentUserId: String {
+        Auth.auth().currentUser?.uid ?? "guest_user"
+    }
+    
+    var matchId: String {
+        let partnerId = targetProfile.ownerUid.isEmpty ? targetProfile.id : targetProfile.ownerUid
+        return currentUserId < partnerId ? "\(currentUserId)_\(partnerId)" : "\(partnerId)_\(currentUserId)"
     }
     
     var body: some View {
-        ZStack {
-            PetsBackground()
+        VStack(spacing: 0) {
+            // MARK: - Header
+            headerView
             
-            VStack(spacing: 0) {
-                // Хедер чата
-                chatHeaderView
-                
-                // Список сообщений
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(chatVM.messages) { message in
-                                messageBubble(message: message)
-                                    .id(message.id)
-                            }
+            // MARK: - Message List
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(messages) { msg in
+                            messageBubble(for: msg)
+                                .id(msg.id)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 20)
                     }
-                    .onChange(of: chatVM.messages.count) { oldValue, newValue in
-                        if let lastId = chatVM.messages.last?.id {
-                            withAnimation {
-                                proxy.scrollTo(lastId, anchor: .bottom)
-                            }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .onChange(of: messages.count) { _, _ in
+                    if let lastId = messages.last?.id {
+                        withAnimation {
+                            proxy.scrollTo(lastId, anchor: .bottom)
                         }
                     }
                 }
-                
-                // Поле ввода сообщения
-                inputBarView
             }
+            
+            Spacer()
+            
+            // MARK: - Input Field
+            inputBar
         }
+        .background(Color(red: 0.98, green: 0.96, blue: 0.93).ignoresSafeArea())
         .navigationBarHidden(true)
+        .onAppear {
+            listenForMessages()
+        }
+        .onDisappear {
+            listener?.remove()
+        }
     }
     
-    // MARK: - Хедер чата
-    private var chatHeaderView: some View {
+    // MARK: - Header
+    private var headerView: some View {
         HStack(spacing: 12) {
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
@@ -58,29 +74,20 @@ struct ChatDetailView: View {
                     .padding(8)
             }
             
-            // Аватарка собеседника
-            if let photo = chatVM.targetProfile.mainPhoto {
-                Image(uiImage: photo)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 42, height: 42)
-                    .clipShape(Circle())
-            } else {
-                Circle()
-                    .fill(appAccent.opacity(0.2))
-                    .frame(width: 42, height: 42)
-                    .overlay(
-                        Image(systemName: "pawprint.fill")
-                            .foregroundColor(appAccent)
-                    )
-            }
+            Circle()
+                .fill(appAccent.opacity(0.15))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: "pawprint.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(appAccent)
+                )
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(chatVM.targetProfile.petName)
+                Text(targetProfile.petName)
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundColor(txtColor)
-                
-                Text("Хозяин: \(chatVM.targetProfile.ownerName.isEmpty ? "Пользователь" : chatVM.targetProfile.ownerName)")
+                Text("\(targetProfile.breed.isEmpty ? "Питомец" : targetProfile.breed) • \(targetProfile.ownerCity)")
                     .font(.system(size: 12, design: .rounded))
                     .foregroundColor(.gray)
             }
@@ -89,57 +96,121 @@ struct ChatDetailView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.9))
-        .shadow(color: Color.black.opacity(0.04), radius: 5, x: 0, y: 3)
+        .background(Color.white)
+        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
     
-    // MARK: - Баббл сообщения
-    private func messageBubble(message: ChatMessage) -> some View {
-        HStack {
-            if message.isFromCurrentUser { Spacer() }
+    // MARK: - Message Bubble
+    private func messageBubble(for message: ChatMessage) -> some View {
+        let isFromMe = message.senderId == currentUserId
+        
+        return HStack {
+            if isFromMe { Spacer() }
             
-            Text(message.text)
-                .font(.system(size: 15, design: .rounded))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(message.isFromCurrentUser ? appAccent : Color.white)
-                .foregroundColor(message.isFromCurrentUser ? .white : txtColor)
-                .cornerRadius(20)
-                .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+            VStack(alignment: isFromMe ? .trailing : .leading, spacing: 4) {
+                Text(message.text)
+                    .font(.system(size: 15, design: .rounded))
+                    .foregroundColor(isFromMe ? .white : txtColor)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(isFromMe ? appAccent : Color.white)
+                    .cornerRadius(18)
+                    .shadow(color: Color.black.opacity(0.03), radius: 3, x: 0, y: 1)
+            }
             
-            if !message.isFromCurrentUser { Spacer() }
+            if !isFromMe { Spacer() }
         }
     }
     
-    // MARK: - Панель ввода
-    private var inputBarView: some View {
-        HStack(spacing: 12) {
-            HStack {
-                TextField("Напишите сообщение...", text: $chatVM.newMessageText)
-                    .font(.system(size: 15, design: .rounded))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(Color.white)
-            .cornerRadius(24)
-            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+    // MARK: - Input Bar
+    private var inputBar: some View {
+        HStack(spacing: 10) {
+            TextField("Написать сообщение...", text: $messageText)
+                .font(.system(size: 15, design: .rounded))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color.white)
+                .cornerRadius(24)
+                .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
             
-            Button(action: {
-                chatVM.sendMessage()
-            }) {
+            Button(action: sendMessage) {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
-                    .background(appAccent)
+                    .frame(width: 46, height: 46)
+                    .background(messageText.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray.opacity(0.4) : appAccent)
                     .clipShape(Circle())
-                    .shadow(color: appAccent.opacity(0.4), radius: 6, x: 0, y: 3)
             }
-            .disabled(chatVM.newMessageText.trimmingCharacters(in: .whitespaces).isEmpty)
-            .opacity(chatVM.newMessageText.trimmingCharacters(in: .whitespaces).isEmpty ? 0.6 : 1.0)
+            .disabled(messageText.trimmingCharacters(in: .whitespaces).isEmpty)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.9))
+        .background(Color.white.opacity(0.8))
+    }
+    
+    // MARK: - Firestore Listen & Send Logic
+    private func listenForMessages() {
+        if targetProfile.id.hasPrefix("mock") {
+            // Для мок-профилей показываем тестовое приветственное сообщение
+            self.messages = [
+                ChatMessage(senderId: targetProfile.id, text: "Привет! Давай погуляем вместе в парке! 🐾", timestamp: Date())
+            ]
+            return
+        }
+        
+        listener?.remove()
+        
+        listener = db.collection("chats")
+            .document(matchId)
+            .collection("messages")
+            .order(by: "timestamp", descending: false)
+            .addSnapshotListener { snapshot, error in
+                guard let docs = snapshot?.documents, error == nil else { return }
+                
+                var newMessages: [ChatMessage] = []
+                for doc in docs {
+                    let data = doc.data()
+                    let senderId = data["senderId"] as? String ?? ""
+                    let text = data["text"] as? String ?? ""
+                    let stamp = (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+                    
+                    let msg = ChatMessage(id: doc.documentID, senderId: senderId, text: text, timestamp: stamp)
+                    newMessages.append(msg)
+                }
+                
+                Task { @MainActor in
+                    self.messages = newMessages
+                }
+            }
+    }
+    
+    private func sendMessage() {
+        let textToSend = messageText.trimmingCharacters(in: .whitespaces)
+        guard !textToSend.isEmpty else { return }
+        
+        messageText = ""
+        
+        if targetProfile.id.hasPrefix("mock") {
+            let userMsg = ChatMessage(senderId: currentUserId, text: textToSend, timestamp: Date())
+            messages.append(userMsg)
+            return
+        }
+        
+        let msgData: [String: Any] = [
+            "senderId": currentUserId,
+            "text": textToSend,
+            "timestamp": FieldValue.serverTimestamp()
+        ]
+        
+        // 1. Сохраняем сообщение в подколлекции messages
+        db.collection("chats").document(matchId).collection("messages").addDocument(data: msgData)
+        
+        // 2. Обновляем метаданные диалога (для списка чатов)
+        let partnerId = targetProfile.ownerUid.isEmpty ? targetProfile.id : targetProfile.ownerUid
+        db.collection("chats").document(matchId).setData([
+            "lastMessage": textToSend,
+            "participants": [currentUserId, partnerId],
+            "updatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
     }
 }

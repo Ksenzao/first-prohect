@@ -1,291 +1,155 @@
 import SwiftUI
 
 struct AuthView: View {
-    @StateObject private var authVM = AuthViewModel()
-    @StateObject private var profileVM = ProfileViewModel()
+    @StateObject private var viewModel = AuthViewModel()
     
-    // Локальные состояния для ввода текста
-    @State private var emailInput: String = ""
-    @State private var passwordInput: String = ""
-    @State private var nameInput: String = ""
-    @State private var phoneInput: String = ""
-    @State private var otpInput: String = ""
-    
-    // Переключатель видимости пароля 👁️
-    @State private var isPasswordVisible: Bool = false
-    
-    let belarusCities = ["Минск", "Гомель", "Могилев", "Витебск", "Гродно", "Брест"]
+    let appAccent = Color(red: 0.95, green: 0.5, blue: 0.2)
+    let txtColor = Color(red: 0.3, green: 0.2, blue: 0.15)
     
     var body: some View {
         ZStack {
             PetsBackground()
             
-            VStack {
-                if authVM.currentScreen == .mainSwipe {
-                    // Переходим в главный контейнер с вкладками (Поиск + Профиль)
-                    MainTabView()
-                } else {
-                    scrollViewContent
-                }
-            }
-        }
-        .animation(.easeInOut(duration: 0.3), value: authVM.currentScreen)
-    }
-    
-    private var scrollViewContent: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                headerLogoView
-                
-                switch authVM.currentScreen {
-                case .login:
-                    loginScreenView
-                case .selectCity:
-                    selectCityScreenView
-                case .signUp:
-                    signUpScreenView
-                case .verifyOTP:
-                    verifyOTPScreenView
-                case .createProfile:
-                    CreateProfileView(initialProfile: profileVM.profile, onFinish: { updatedProfile in
-                        profileVM.profile = updatedProfile
-                        authVM.currentScreen = .mainSwipe
-                    })
-                case .mainSwipe:
-                    EmptyView()
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 40)
-        }
-    }
-    
-    // MARK: - Header Logo
-    private var headerLogoView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "pawprint.circle.fill")
-                .font(.system(size: 64))
-                .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
-                .shadow(color: Color(red: 0.95, green: 0.5, blue: 0.2).opacity(0.3), radius: 10, x: 0, y: 5)
-            
-            Text("PetsDate")
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
-                .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
-            
-            Text("Найди друга своему питомцу 🐾")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundColor(.gray)
-        }
-        .padding(.bottom, 10)
-    }
-    
-    // MARK: - Login Screen
-    private var loginScreenView: some View {
-        VStack(spacing: 16) {
-            Text("Вход в аккаунт")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
-            
-            customTextField(placeholder: "Email", text: $emailInput, icon: "envelope.fill")
-            customSecureField(placeholder: "Пароль", text: $passwordInput, icon: "lock.fill")
-            
-            if let error = authVM.errorMessage {
-                Text(error)
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundColor(.red)
-                    .multilineTextAlignment(.center)
-            }
-            
-            primaryButton(title: "Войти") {
-                authVM.login(email: emailInput, password: passwordInput) { success in
-                    if success {
-                        authVM.currentScreen = .mainSwipe
-                    }
-                }
-            }
-            
-            Button("Нет аккаунта? Зарегистрироваться") {
-                authVM.errorMessage = nil
-                authVM.currentScreen = .selectCity
-            }
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
-            .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
-        }
-        .padding(24)
-        .background(Color.white.opacity(0.9))
-        .cornerRadius(28)
-        .shadow(color: Color.black.opacity(0.06), radius: 15, x: 0, y: 8)
-    }
-    
-    // MARK: - Select City Screen
-    private var selectCityScreenView: some View {
-        VStack(spacing: 16) {
-            Text("Выберите ваш город")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
-            
-            ForEach(belarusCities, id: \.self) { city in
-                Button(action: {
-                    profileVM.profile.ownerCity = city
-                    authVM.currentScreen = .signUp
-                }) {
-                    HStack {
-                        Image(systemName: "mappin.circle.fill")
-                            .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
-                        Text(city)
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.gray.opacity(0.5))
-                    }
-                    .padding()
-                    .background(Color(red: 0.98, green: 0.96, blue: 0.94))
-                    .cornerRadius(16)
-                }
-            }
-        }
-        .padding(24)
-        .background(Color.white.opacity(0.9))
-        .cornerRadius(28)
-        .shadow(color: Color.black.opacity(0.06), radius: 15, x: 0, y: 8)
-    }
-    
-    // MARK: - Sign Up Screen
-    private var signUpScreenView: some View {
-        VStack(spacing: 16) {
-            Text("Регистрация")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
-            
-            customTextField(placeholder: "Ваше имя", text: $nameInput, icon: "person.fill", isCapitalized: true)
-            customTextField(placeholder: "Email", text: $emailInput, icon: "envelope.fill")
-            customTextField(placeholder: "Телефон", text: $phoneInput, icon: "phone.fill", isPhone: true)
-            customSecureField(placeholder: "Пароль", text: $passwordInput, icon: "lock.fill")
-            
-            if let error = authVM.errorMessage {
-                Text(error)
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundColor(.red)
-            }
-            
-            primaryButton(title: "Продолжить") {
-                authVM.signUp(email: emailInput, password: passwordInput) { success in
-                    if success {
-                        // Записываем введенные при регистрации данные хозяина в модель профиля
-                        profileVM.profile.ownerName = nameInput
-                        profileVM.profile.ownerEmail = emailInput
-                        profileVM.profile.ownerPhone = phoneInput
+            ScrollView {
+                VStack(spacing: 24) {
+                    // MARK: - Логотип
+                    VStack(spacing: 8) {
+                        Image(systemName: "pawprint.fill")
+                            .font(.system(size: 56))
+                            .foregroundColor(appAccent)
+                            .shadow(color: appAccent.opacity(0.3), radius: 8, x: 0, y: 4)
                         
-                        authVM.currentScreen = .createProfile
+                        Text("PetsDate")
+                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                            .foregroundColor(txtColor)
+                        
+                        Text("Найди компанию своему питомцу 🐾")
+                            .font(.system(size: 14, design: .rounded))
+                            .foregroundColor(.gray)
                     }
+                    .padding(.top, 40)
+                    
+                    // MARK: - Переключатель режим Вход / Регистрация
+                    Picker("", selection: $viewModel.isSignUpMode) {
+                        Text("Вход").tag(false)
+                        Text("Регистрация").tag(true)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding(.horizontal, 24)
+                    
+                    // MARK: - Форма
+                    VStack(spacing: 16) {
+                        // Основные данные
+                        customTextField(placeholder: "Email", text: $viewModel.emailText, icon: "envelope.fill")
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                        
+                        customSecureField(placeholder: "Пароль", text: $viewModel.passwordText, icon: "lock.fill")
+                        
+                        // Дополнительные поля при регистрации
+                        if viewModel.isSignUpMode {
+                            VStack(spacing: 14) {
+                                Divider().padding(.vertical, 4)
+                                
+                                Text("Данные питомца и хозяина")
+                                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                                    .foregroundColor(txtColor)
+                                
+                                customTextField(placeholder: "Кличка питомца*", text: $viewModel.petNameText, icon: "pawprint.fill")
+                                customTextField(placeholder: "Порода", text: $viewModel.breedText, icon: "tag.fill")
+                                customTextField(placeholder: "Возраст (лет)", text: $viewModel.ageYearsText, icon: "calendar")
+                                    .keyboardType(.numberPad)
+                                customTextField(placeholder: "Имя хозяина", text: $viewModel.ownerNameText, icon: "person.fill")
+                                customTextField(placeholder: "Город (например, Минск)", text: $viewModel.ownerCityText, icon: "mappin.circle.fill")
+                                
+                                customTextField(placeholder: "О питомце (характер, привычки)", text: $viewModel.bioText, icon: "text.alignleft")
+                                
+                                Toggle(isOn: $viewModel.isVaccinated) {
+                                    HStack {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .foregroundColor(.green)
+                                        Text("Есть прививки / ветпаспорт")
+                                            .font(.system(size: 14, design: .rounded))
+                                            .foregroundColor(txtColor)
+                                    }
+                                }
+                                .padding(.horizontal, 4)
+                            }
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
+                    .padding(20)
+                    .background(Color.white)
+                    .cornerRadius(28)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                    .padding(.horizontal, 20)
+                    
+                    // Ошибка
+                    if let error = viewModel.errorMessage {
+                        Text(error)
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 24)
+                    }
+                    
+                    // MARK: - Кнопка действия
+                    Button(action: {
+                        if viewModel.isSignUpMode {
+                            viewModel.register()
+                        } else {
+                            viewModel.login()
+                        }
+                    }) {
+                        HStack {
+                            if viewModel.isLoading {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text(viewModel.isSignUpMode ? "Создать профиль" : "Войти")
+                                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 54)
+                        .background(appAccent)
+                        .cornerRadius(27)
+                        .shadow(color: appAccent.opacity(0.4), radius: 8, x: 0, y: 4)
+                    }
+                    .disabled(viewModel.isLoading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
                 }
             }
-            
-            Button("Уже есть аккаунт? Войти") {
-                authVM.errorMessage = nil
-                authVM.currentScreen = .login
-            }
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
-            .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
         }
-        .padding(24)
-        .background(Color.white.opacity(0.9))
-        .cornerRadius(28)
-        .shadow(color: Color.black.opacity(0.06), radius: 15, x: 0, y: 8)
     }
     
-    // MARK: - Verify OTP Screen
-    private var verifyOTPScreenView: some View {
-        VStack(spacing: 16) {
-            Text("Подтверждение кода")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
-            
-            customTextField(placeholder: "Код из СМС", text: $otpInput, icon: "number", isPhone: true)
-            
-            primaryButton(title: "Подтвердить") {
-                authVM.currentScreen = .createProfile
-            }
-        }
-        .padding(24)
-        .background(Color.white.opacity(0.9))
-        .cornerRadius(28)
-        .shadow(color: Color.black.opacity(0.06), radius: 15, x: 0, y: 8)
-    }
-    
-    // MARK: - UI Helpers
-    private func customTextField(placeholder: String, text: Binding<String>, icon: String, isCapitalized: Bool = false, isPhone: Bool = false) -> some View {
-        HStack {
+    // MARK: - Кастомное текстовое поле
+    private func customTextField(placeholder: String, text: Binding<String>, icon: String) -> some View {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
-                .frame(width: 24)
+                .foregroundColor(appAccent)
+                .frame(width: 20)
             TextField(placeholder, text: text)
                 .font(.system(size: 15, design: .rounded))
-                .textInputAutocapitalization(isCapitalized ? .words : .never)
-                .keyboardType(isPhone ? .phonePad : .default)
-                .autocorrectionDisabled()
         }
-        .padding()
-        .background(Color(red: 0.97, green: 0.96, blue: 0.95))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color(red: 0.97, green: 0.95, blue: 0.93))
         .cornerRadius(16)
     }
     
     private func customSecureField(placeholder: String, text: Binding<String>, icon: String) -> some View {
-        HStack {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
-                .frame(width: 24)
-            
-            if isPasswordVisible {
-                TextField(placeholder, text: text)
-                    .font(.system(size: 15, design: .rounded))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-            } else {
-                SecureField(placeholder, text: text)
-                    .font(.system(size: 15, design: .rounded))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-            }
-            
-            Button(action: {
-                isPasswordVisible.toggle()
-            }) {
-                Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
-                    .foregroundColor(.gray.opacity(0.7))
-            }
+                .foregroundColor(appAccent)
+                .frame(width: 20)
+            SecureField(placeholder, text: text)
+                .font(.system(size: 15, design: .rounded))
         }
-        .padding()
-        .background(Color(red: 0.97, green: 0.96, blue: 0.95))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color(red: 0.97, green: 0.95, blue: 0.93))
         .cornerRadius(16)
-    }
-    
-    private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                if authVM.isLoading {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Text(title)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                LinearGradient(
-                    colors: [Color(red: 0.95, green: 0.5, blue: 0.2), Color(red: 0.85, green: 0.35, blue: 0.15)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .cornerRadius(26)
-            .shadow(color: Color(red: 0.95, green: 0.5, blue: 0.2).opacity(0.3), radius: 8, x: 0, y: 4)
-        }
-        .disabled(authVM.isLoading)
     }
 }

@@ -1,36 +1,34 @@
 import Foundation
-import UIKit
 import Combine
+import FirebaseFirestore
 import FirebaseAuth
 
 @MainActor
 final class ProfileViewModel: ObservableObject {
     @Published var profile: PetProfile = PetProfile()
     @Published var isLoading: Bool = false
-    @Published var errorMessage: String? = nil
+    @Published var isProfileNotFound: Bool = false
     
-    // MARK: - Загрузка профиля текущего авторизованного пользователя
     func fetchCurrentUserProfile() {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            self.isProfileNotFound = true
+            return
+        }
         
         isLoading = true
-        errorMessage = nil
         
         FirestoreService.shared.fetchPetProfile(userId: currentUserId) { [weak self] result in
-            guard let self = self else { return }
-            
             Task { @MainActor in
+                guard let self = self else { return }
                 self.isLoading = false
                 
                 switch result {
                 case .success(let fetchedProfile):
-                    // fetchedProfile имеет тип PetProfile (не Optional),
-                    // поэтому присваиваем его напрямую без `if let`
                     self.profile = fetchedProfile
-                    
-                case .failure(let error):
-                    print("⚠️ Ошибка загрузки профиля: \(error.localizedDescription)")
-                    self.errorMessage = error.localizedDescription
+                    self.isProfileNotFound = false
+                case .failure:
+                    // Если документ в Firestore удален или не найден
+                    self.isProfileNotFound = true
                 }
             }
         }
