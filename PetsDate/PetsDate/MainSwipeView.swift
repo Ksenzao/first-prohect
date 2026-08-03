@@ -1,68 +1,82 @@
 import SwiftUI
 
 struct MainSwipeView: View {
-    @StateObject private var viewModel = SwipeViewModel()
-    @State private var offset: CGSize = .zero
+    @StateObject private var swipeVM = SwipeViewModel()
+    
+    // Состояния открытого чата
+    @State private var activeChatProfile: PetProfile? = nil
+    @State private var isChatPresented: Bool = false
+    
+    let appAccent = Color(red: 0.95, green: 0.5, blue: 0.2)
+    let txtColor = Color(red: 0.3, green: 0.2, blue: 0.15)
     
     var body: some View {
-        ZStack {
-            PetsBackground()
-            
-            VStack(spacing: 0) {
-                // Header с логотипом PetsDate 🐾
-                headerView
+        GeometryReader { outerGeometry in
+            ZStack {
+                PetsBackground()
                 
-                Spacer()
-                
-                // Карточки питомцев
-                if viewModel.isLoading {
-                    VStack(spacing: 16) {
+                VStack(spacing: 0) {
+                    // Хедер
+                    headerView
+                        .padding(.horizontal, 20)
+                        .padding(.top, 10)
+                    
+                    Spacer(minLength: 10)
+                    
+                    // Контейнер карточек
+                    if swipeVM.isLoading {
                         ProgressView()
-                            .scaleEffect(1.4)
-                            .tint(Color(red: 0.9, green: 0.45, blue: 0.2))
-                        Text("Ищем пушистых друзей... 🐾")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.gray)
+                            .scaleEffect(1.3)
+                            .tint(appAccent)
+                    } else if swipeVM.candidateProfiles.isEmpty {
+                        emptyStateView
+                    } else {
+                        ZStack {
+                            ForEach(swipeVM.candidateProfiles.reversed(), id: \.ownerEmail) { profile in
+                                petCardView(profile: profile, maxHeight: outerGeometry.size.height * 0.62)
+                            }
+                        }
+                        .padding(.horizontal, 16)
                     }
-                } else if viewModel.candidateProfiles.isEmpty {
-                    emptyStateView
-                } else {
-                    cardsStackView
+                    
+                    Spacer(minLength: 10)
+                    
+                    // Кнопки действий (Лайк / Дизлайк)
+                    if !swipeVM.candidateProfiles.isEmpty {
+                        actionButtonsView
+                            .padding(.bottom, 20)
+                    }
                 }
                 
-                Spacer()
-                
-                // Кнопки управления (Дизлайк / Лапка)
-                if !viewModel.candidateProfiles.isEmpty {
-                    bottomActionButtons
+                // 💥 Поп-ап взаимности
+                if swipeVM.showMatchPopup, let match = swipeVM.matchedProfile {
+                    matchPopupOverlay(matchedPet: match)
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(), value: swipeVM.showMatchPopup)
                 }
             }
         }
         .onAppear {
-            viewModel.fetchCandidates(currentPetType: "Собака")
+            swipeVM.fetchCandidates()
         }
-        .overlay(
-            matchPopupOverlay
-        )
+        // Безопасное открытие экрана чата
+        .fullScreenCover(isPresented: $isChatPresented) {
+            if let target = activeChatProfile {
+                ChatDetailView(targetProfile: target)
+            }
+        }
     }
     
-    // MARK: - Header
+    // MARK: - Хедер
     private var headerView: some View {
         HStack {
             HStack(spacing: 8) {
-                Image(systemName: "pawprint.circle.fill")
-                    .font(.system(size: 30))
-                    .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
-                
+                Image(systemName: "pawprint.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(appAccent)
                 Text("PetsDate")
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color(red: 0.95, green: 0.5, blue: 0.2), Color(red: 0.85, green: 0.35, blue: 0.15)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
+                    .foregroundColor(txtColor)
             }
             
             Spacer()
@@ -70,259 +84,207 @@ struct MainSwipeView: View {
             Button(action: {}) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
+                    .foregroundColor(txtColor)
                     .padding(10)
-                    .background(Color.white.opacity(0.85))
+                    .background(Color.white)
                     .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
+                    .shadow(color: Color.black.opacity(0.06), radius: 5, x: 0, y: 2)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-    }
-    
-    // MARK: - Стек карточек
-    private var cardsStackView: some View {
-        ZStack {
-            ForEach(Array(viewModel.candidateProfiles.enumerated().reversed()), id: \.element.petName) { index, profile in
-                if index == 0 {
-                    petCard(for: profile)
-                        .offset(x: offset.width, y: offset.height * 0.4)
-                        .rotationEffect(.degrees(Double(offset.width / 15)))
-                        .gesture(
-                            DragGesture()
-                                .onChanged { gesture in
-                                    offset = gesture.translation
-                                }
-                                .onEnded { gesture in
-                                    if gesture.translation.width > 120 {
-                                        withAnimation(.spring()) {
-                                            offset = CGSize(width: 500, height: 0)
-                                        }
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                            viewModel.swipeRight(profile: profile)
-                                            offset = .zero
-                                        }
-                                    } else if gesture.translation.width < -120 {
-                                        withAnimation(.spring()) {
-                                            offset = CGSize(width: -500, height: 0)
-                                        }
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                            viewModel.swipeLeft(profile: profile)
-                                            offset = .zero
-                                        }
-                                    } else {
-                                        withAnimation(.spring()) {
-                                            offset = .zero
-                                        }
-                                    }
-                                }
-                        )
-                } else if index == 1 {
-                    petCard(for: profile)
-                        .scaleEffect(0.95)
-                        .offset(y: 15)
-                        .opacity(0.7)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
     }
     
     // MARK: - Карточка питомца
-    private func petCard(for profile: PetProfile) -> some View {
-        ZStack(alignment: .bottom) {
-            // Фотография
-            Group {
+    private func petCardView(profile: PetProfile, maxHeight: CGFloat) -> some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottomLeading) {
                 if let image = profile.mainPhoto {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
                 } else {
-                    ZStack {
-                        Color(red: 0.95, green: 0.92, blue: 0.88)
-                        Image(systemName: "pawprint.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(Color(red: 0.85, green: 0.78, blue: 0.7))
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 500)
-            .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-            
-            // Градиент затемнения
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.2), .black.opacity(0.85)],
-                startPoint: .center,
-                endPoint: .bottom
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-            
-            // Текстовая информация
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(profile.petName)
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    
-                    Text("\(profile.ageYears) года")
-                        .font(.system(size: 20, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.9))
-                    
-                    Spacer()
-                    
-                    if profile.isVaccinated {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark.shield.fill")
-                                .font(.system(size: 12))
-                            Text("Привит")
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.green.opacity(0.8))
-                        .clipShape(Capsule())
-                    }
+                    Rectangle()
+                        .fill(appAccent.opacity(0.15))
+                        .overlay(
+                            Image(systemName: "pawprint.fill")
+                                .font(.system(size: 80))
+                                .foregroundColor(appAccent.opacity(0.4))
+                        )
                 }
                 
-                // Порода и Город через explicit HStack
-                HStack(spacing: 14) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "dog.fill")
-                        Text(profile.breed.isEmpty ? "Порода не указана" : profile.breed)
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.8)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(profile.petName.isEmpty ? "Без имени" : profile.petName)
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        
+                        if let years = Int(profile.ageYears), years > 0 {
+                            Text("\(years) \(formattedAgeString(years: years))")
+                                .font(.system(size: 18, weight: .medium, design: .rounded))
+                                .foregroundColor(.white.opacity(0.9))
+                        }
                     }
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     
                     HStack(spacing: 4) {
                         Image(systemName: "mappin.circle.fill")
-                        Text(profile.ownerCity)
+                            .foregroundColor(appAccent)
+                        Text("\(profile.ownerCity.isEmpty ? "Минск" : profile.ownerCity) • \(profile.breed.isEmpty ? "Порода не указана" : profile.breed)")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.85))
                     }
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
                 }
-                .foregroundColor(.white.opacity(0.85))
-                
-                if !profile.bioText.isEmpty {
-                    Text(profile.bioText)
-                        .font(.system(size: 14, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
-                        .lineLimit(2)
-                }
+                .padding(20)
             }
-            .padding(24)
+            .cornerRadius(28)
+            .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 5)
         }
-        .frame(height: 500)
-        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 8)
+        .frame(height: maxHeight)
     }
     
-    // MARK: - Нижняя панель с кнопками
-    private var bottomActionButtons: some View {
-        HStack(spacing: 36) {
-            // Кнопка Дизлайк ❌
+    private func formattedAgeString(years: Int) -> String {
+        let rem10 = years % 10
+        let rem100 = years % 100
+        
+        if rem100 >= 11 && rem100 <= 14 { return "лет" }
+        switch rem10 {
+        case 1: return "год"
+        case 2, 3, 4: return "года"
+        default: return "лет"
+        }
+    }
+    
+    // MARK: - Кнопки Лайк/Дизлайк
+    private var actionButtonsView: some View {
+        HStack(spacing: 30) {
             Button(action: {
-                if let top = viewModel.candidateProfiles.first {
-                    withAnimation {
-                        viewModel.swipeLeft(profile: top)
-                    }
+                if let topProfile = swipeVM.candidateProfiles.first {
+                    swipeVM.swipeLeft(profile: topProfile)
                 }
             }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(Color(red: 0.85, green: 0.35, blue: 0.3))
-                    .frame(width: 64, height: 64)
+                    .foregroundColor(.red)
+                    .frame(width: 60, height: 60)
                     .background(Color.white)
                     .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 5)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
             }
             
-            // Кнопка Лапка 🐾
             Button(action: {
-                if let top = viewModel.candidateProfiles.first {
-                    withAnimation {
-                        viewModel.swipeRight(profile: top)
-                    }
+                if let topProfile = swipeVM.candidateProfiles.first {
+                    swipeVM.swipeRight(profile: topProfile)
                 }
             }) {
                 Image(systemName: "pawprint.fill")
-                    .font(.system(size: 28))
+                    .font(.system(size: 26))
                     .foregroundColor(.white)
-                    .frame(width: 76, height: 76)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(red: 1.0, green: 0.55, blue: 0.25), Color(red: 0.9, green: 0.4, blue: 0.15)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .frame(width: 70, height: 70)
+                    .background(appAccent)
                     .clipShape(Circle())
-                    .shadow(color: Color(red: 0.95, green: 0.5, blue: 0.2).opacity(0.4), radius: 14, x: 0, y: 7)
+                    .shadow(color: appAccent.opacity(0.4), radius: 10, x: 0, y: 5)
             }
         }
-        .padding(.bottom, 20)
     }
     
-    // MARK: - Экран отсутствия анкет
+    // MARK: - Пустое состояние
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(Color(red: 0.95, green: 0.6, blue: 0.35).opacity(0.12))
-                    .frame(width: 120, height: 120)
-                
-                Image(systemName: "dog.circle.fill")
-                    .font(.system(size: 70))
-                    .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
+                    .fill(appAccent.opacity(0.12))
+                    .frame(width: 100, height: 100)
+                Image(systemName: "dog.fill")
+                    .font(.system(size: 44))
+                    .foregroundColor(appAccent)
             }
             
             Text("Пока это все анкеты!")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
+                .foregroundColor(txtColor)
             
-            Text("Зайдите позже, чтобы увидеть новых хвостиков поблизости 🐾")
-                .font(.system(size: 15, design: .rounded))
+            Text("Зайдите позже, чтобы увидеть новых\nхвостиков поблизости 🐾")
+                .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
         }
+        .padding(40)
     }
     
-    // MARK: - Поп-ап Совпадения 🐾
-    @ViewBuilder
-    private var matchPopupOverlay: some View {
-        if viewModel.showMatchPopup, let match = viewModel.matchedProfile {
-            ZStack {
-                Color.black.opacity(0.65)
-                    .ignoresSafeArea()
+    // MARK: - Pop-up Match Overlay
+    private func matchPopupOverlay(matchedPet: PetProfile) -> some View {
+        ZStack {
+            Color.black.opacity(0.75)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                Text("Это взаимность! 🐾")
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    .foregroundColor(.white)
                 
-                VStack(spacing: 20) {
-                    Text("Это Взаимная Лапка! 🐾")
-                        .font(.system(size: 26, weight: .heavy, design: .rounded))
-                        .foregroundColor(Color(red: 1.0, green: 0.55, blue: 0.25))
-                    
-                    Text("Вы и \(match.petName) понравились друг другу!")
-                        .font(.system(size: 16, design: .rounded))
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                    
+                Text("Вы и \(matchedPet.petName) понравились друг другу")
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                
+                if let photo = matchedPet.mainPhoto {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 130, height: 130)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(appAccent, lineWidth: 4))
+                        .shadow(radius: 10)
+                } else {
+                    Circle()
+                        .fill(appAccent.opacity(0.2))
+                        .frame(width: 130, height: 130)
+                        .overlay(
+                            Image(systemName: "pawprint.fill")
+                                .font(.system(size: 50))
+                                .foregroundColor(appAccent)
+                        )
+                }
+                
+                VStack(spacing: 12) {
                     Button(action: {
-                        viewModel.showMatchPopup = false
+                        let currentMatch = matchedPet
+                        swipeVM.showMatchPopup = false
+                        swipeVM.removeTopCard()
+                        activeChatProfile = currentMatch
+                        isChatPresented = true
                     }) {
-                        Text("Написать сообщение 💬")
+                        Text("Написать хозяину 💬")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
-                            .background(Color(red: 0.95, green: 0.5, blue: 0.2))
+                            .background(appAccent)
                             .cornerRadius(25)
                     }
+                    
+                    Button(action: {
+                        swipeVM.showMatchPopup = false
+                        swipeVM.removeTopCard()
+                    }) {
+                        Text("Продолжить поиск")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                 }
-                .padding(28)
-                .background(Color.white)
-                .cornerRadius(32)
-                .padding(.horizontal, 36)
-                .shadow(radius: 20)
+                .padding(.horizontal, 10)
+                .padding(.top, 10)
             }
+            .padding(25)
+            .background(Color(red: 0.18, green: 0.14, blue: 0.14))
+            .cornerRadius(30)
+            .padding(.horizontal, 30)
         }
     }
 }

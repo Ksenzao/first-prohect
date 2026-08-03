@@ -11,6 +11,9 @@ struct AuthView: View {
     @State private var phoneInput: String = ""
     @State private var otpInput: String = ""
     
+    // Переключатель видимости пароля 👁️
+    @State private var isPasswordVisible: Bool = false
+    
     let belarusCities = ["Минск", "Гомель", "Могилев", "Витебск", "Гродно", "Брест"]
     
     var body: some View {
@@ -19,7 +22,8 @@ struct AuthView: View {
             
             VStack {
                 if authVM.currentScreen == .mainSwipe {
-                    MainSwipeView()
+                    // Переходим в главный контейнер с вкладками (Поиск + Профиль)
+                    MainTabView()
                 } else {
                     scrollViewContent
                 }
@@ -155,9 +159,9 @@ struct AuthView: View {
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
             
-            customTextField(placeholder: "Ваше имя", text: $nameInput, icon: "person.fill")
+            customTextField(placeholder: "Ваше имя", text: $nameInput, icon: "person.fill", isCapitalized: true)
             customTextField(placeholder: "Email", text: $emailInput, icon: "envelope.fill")
-            customTextField(placeholder: "Телефон", text: $phoneInput, icon: "phone.fill")
+            customTextField(placeholder: "Телефон", text: $phoneInput, icon: "phone.fill", isPhone: true)
             customSecureField(placeholder: "Пароль", text: $passwordInput, icon: "lock.fill")
             
             if let error = authVM.errorMessage {
@@ -169,9 +173,11 @@ struct AuthView: View {
             primaryButton(title: "Продолжить") {
                 authVM.signUp(email: emailInput, password: passwordInput) { success in
                     if success {
+                        // Записываем введенные при регистрации данные хозяина в модель профиля
                         profileVM.profile.ownerName = nameInput
                         profileVM.profile.ownerEmail = emailInput
                         profileVM.profile.ownerPhone = phoneInput
+                        
                         authVM.currentScreen = .createProfile
                     }
                 }
@@ -197,7 +203,7 @@ struct AuthView: View {
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundColor(Color(red: 0.3, green: 0.2, blue: 0.15))
             
-            customTextField(placeholder: "Код из СМС", text: $otpInput, icon: "number")
+            customTextField(placeholder: "Код из СМС", text: $otpInput, icon: "number", isPhone: true)
             
             primaryButton(title: "Подтвердить") {
                 authVM.currentScreen = .createProfile
@@ -210,13 +216,16 @@ struct AuthView: View {
     }
     
     // MARK: - UI Helpers
-    private func customTextField(placeholder: String, text: Binding<String>, icon: String) -> some View {
+    private func customTextField(placeholder: String, text: Binding<String>, icon: String, isCapitalized: Bool = false, isPhone: Bool = false) -> some View {
         HStack {
             Image(systemName: icon)
                 .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
                 .frame(width: 24)
             TextField(placeholder, text: text)
                 .font(.system(size: 15, design: .rounded))
+                .textInputAutocapitalization(isCapitalized ? .words : .never)
+                .keyboardType(isPhone ? .phonePad : .default)
+                .autocorrectionDisabled()
         }
         .padding()
         .background(Color(red: 0.97, green: 0.96, blue: 0.95))
@@ -228,8 +237,25 @@ struct AuthView: View {
             Image(systemName: icon)
                 .foregroundColor(Color(red: 0.95, green: 0.5, blue: 0.2))
                 .frame(width: 24)
-            SecureField(placeholder, text: text)
-                .font(.system(size: 15, design: .rounded))
+            
+            if isPasswordVisible {
+                TextField(placeholder, text: text)
+                    .font(.system(size: 15, design: .rounded))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            } else {
+                SecureField(placeholder, text: text)
+                    .font(.system(size: 15, design: .rounded))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            }
+            
+            Button(action: {
+                isPasswordVisible.toggle()
+            }) {
+                Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
+                    .foregroundColor(.gray.opacity(0.7))
+            }
         }
         .padding()
         .background(Color(red: 0.97, green: 0.96, blue: 0.95))
