@@ -9,6 +9,10 @@ struct CreateProfileView: View {
     var onBackToLogin: () -> Void = {}
     var onFinish: (PetProfile) -> Void = { _ in }
     
+    // MARK: - Состояния загрузки в Firebase
+    @State private var isSaving = false
+    @State private var saveErrorMessage: String? = nil
+    
     // MARK: - Переменные состояния
     @State private var currentStep: Int = 1
     let totalSteps = 11
@@ -119,6 +123,7 @@ struct CreateProfileView: View {
         }
     }
     
+    // Валидация кнопки "Продолжить"
     var isNextButtonEnabled: Bool {
         switch currentStep {
         case 1: return true
@@ -133,7 +138,8 @@ struct CreateProfileView: View {
         case 8: return !selectedTraits.isEmpty && selectedTraits.count <= 5
         case 9: return !bioText.trimmingCharacters(in: .whitespaces).isEmpty && bioText.count <= 120
         case 10: return isVaccinated != nil
-        case 11: return vaccineCertificatePhoto != nil
+        case 11:
+            return vaccineCertificatePhoto != nil
         default: return true
         }
     }
@@ -720,7 +726,7 @@ struct CreateProfileView: View {
             .cornerRadius(20)
             
             Button(action: {
-                withAnimation { showPreferencesEdit = true }
+                withAnimation { showPreferencesEdit = false }
             }) {
                 Text("Изменить предпочтения")
                     .font(.subheadline)
@@ -729,7 +735,11 @@ struct CreateProfileView: View {
                     .underline()
             }
             
+            // Финальная кнопка — сохраняет профиль в Cloud Firestore & Storage
             Button(action: {
+                isSaving = true
+                saveErrorMessage = nil
+                
                 var finalProfile = initialProfile
                 finalProfile.petType = selectedPetType
                 finalProfile.breed = breedQuery
@@ -747,18 +757,44 @@ struct CreateProfileView: View {
                 finalProfile.vaccineCertificatePhoto = vaccineCertificatePhoto
                 finalProfile.vaccineDate = vaccineDate
                 
-                onFinish(finalProfile)
+                FirestoreService.shared.savePetProfile(finalProfile) { result in
+                    isSaving = false
+                    switch result {
+                    case .success:
+                        onFinish(finalProfile)
+                    case .failure(let error):
+                        saveErrorMessage = "Ошибка сохранения: \(error.localizedDescription)"
+                    }
+                }
             }) {
-                Text("Начать знакомства 🐾")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(Color("AppAccent"))
-                    .cornerRadius(26)
-                    .shadow(color: Color("AppAccent").opacity(0.3), radius: 8, x: 0, y: 4)
+                HStack(spacing: 10) {
+                    if isSaving {
+                        ProgressView()
+                            .tint(.white)
+                        Text("Сохранение...")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                    } else {
+                        Text("Начать знакомства 🐾")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(isSaving ? Color.gray : Color("AppAccent"))
+                .cornerRadius(26)
+                .shadow(color: isSaving ? .clear : Color("AppAccent").opacity(0.3), radius: 8, x: 0, y: 4)
             }
+            .disabled(isSaving)
             .padding(.top, 10)
+            
+            if let errorMsg = saveErrorMessage {
+                Text(errorMsg)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
         }
     }
     
@@ -963,44 +999,6 @@ struct CreateProfileView: View {
                 .shadow(color: isNextButtonEnabled ? Color("AppAccent").opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
         }
         .disabled(!isNextButtonEnabled)
-    }
-}
-
-// MARK: - Вспомогательный класс для съёмки на камеру
-struct CameraPickerView: UIViewControllerRepresentable {
-    var onImageCaptured: (UIImage) -> Void
-    @Environment(\.presentationMode) private var presentationMode
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: CameraPickerView
-        
-        init(_ parent: CameraPickerView) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                parent.onImageCaptured(image)
-            }
-            parent.presentationMode.wrappedValue.dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.presentationMode.wrappedValue.dismiss()
-        }
     }
 }
 

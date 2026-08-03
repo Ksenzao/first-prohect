@@ -11,40 +11,19 @@ enum AuthScreen {
 }
 
 struct AuthView: View {
-    @State private var currentScreen: AuthScreen = .login
+    // Подключаем ViewModels через StateObject
+    @StateObject private var authVM = AuthViewModel()
+    @StateObject private var profileVM = ProfileViewModel()
     
-    // Единственная точка правды для всего профиля
-    @State private var currentPetProfile = PetProfile()
-    
-    // Поля формы
-    @State private var phoneNumber = ""
-    @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var isPasswordVisible = false
-    @State private var isConfirmPasswordVisible = false
-    
-    @State private var name = ""
-    @State private var email = ""
-    @State private var selectedCity = "Минск"
-    @State private var isAgreed = false
-    
-    // Поля OTP
+    // Таймер для OTP
     @State private var timeRemaining = 60
     @State private var timerActive = false
-    @State private var authErrorMessage = ""
     
     let belarusCities = ["Минск", "Брест", "Гродно", "Гомель", "Могилёв", "Витебск"]
     
-    private var isMinLength: Bool { password.count >= 8 }
-    private var hasUppercase: Bool { password.range(of: "[A-ZА-Я]", options: .regularExpression) != nil }
-    private var hasLowercase: Bool { password.range(of: "[a-zа-я]", options: .regularExpression) != nil }
-    private var hasNumberOrSymbol: Bool { password.range(of: "[0-9!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]", options: .regularExpression) != nil }
-    private var isPasswordValid: Bool { isMinLength && hasUppercase && hasLowercase && hasNumberOrSymbol }
-    private var isPasswordsMatch: Bool { !password.isEmpty && password == confirmPassword }
-    
     var body: some View {
         ZStack {
-            if currentScreen != .createProfile && currentScreen != .mainSwipe {
+            if authVM.currentScreen != .createProfile && authVM.currentScreen != .mainSwipe {
                 LinearGradient(
                     stops: [
                         Gradient.Stop(color: Color("AppBackground1"), location: 0.1),
@@ -56,22 +35,22 @@ struct AuthView: View {
                 .ignoresSafeArea()
             }
             
-            if currentScreen == .createProfile {
+            if authVM.currentScreen == .createProfile {
                 CreateProfileView(
-                    initialProfile: currentPetProfile,
+                    initialProfile: profileVM.profile,
                     onBackToLogin: {
-                        withAnimation { currentScreen = .login }
+                        withAnimation { authVM.currentScreen = .login }
                     },
                     onFinish: { createdProfile in
-                        currentPetProfile = createdProfile
-                        withAnimation { currentScreen = .mainSwipe }
+                        profileVM.profile = createdProfile
+                        withAnimation { authVM.currentScreen = .mainSwipe }
                     }
                 )
-            } else if currentScreen == .mainSwipe {
+            } else if authVM.currentScreen == .mainSwipe {
                 MainSwipeView(
-                    userProfile: currentPetProfile,
+                    userProfile: profileVM.profile,
                     onLogout: {
-                        withAnimation { currentScreen = .login }
+                        withAnimation { authVM.currentScreen = .login }
                     }
                 )
             } else {
@@ -89,7 +68,7 @@ struct AuthView: View {
     
     @ViewBuilder
     private var currentScreenView: some View {
-        switch currentScreen {
+        switch authVM.currentScreen {
         case .login:
             loginCard
         case .selectCity:
@@ -98,23 +77,12 @@ struct AuthView: View {
             signUpCard
         case .verifyOTP:
             otpCard
-        case .createProfile:
-            CreateProfileView(
-                initialProfile: currentPetProfile,
-                onBackToLogin: { withAnimation { currentScreen = .login } },
-                onFinish: { createdProfile in
-                    currentPetProfile = createdProfile
-                    withAnimation { currentScreen = .mainSwipe }
-                }
-            )
-        case .mainSwipe:
-            MainSwipeView(
-                userProfile: currentPetProfile,
-                onLogout: { withAnimation { currentScreen = .login } }
-            )
+        case .createProfile, .mainSwipe:
+            EmptyView()
         }
     }
     
+    // MARK: - 1. Вход
     private var loginCard: some View {
         VStack(spacing: 20) {
             VStack(spacing: 8) {
@@ -139,10 +107,9 @@ struct AuthView: View {
                     .foregroundColor(.gray)
                     .padding(.leading, 12)
                 
-                Divider()
-                    .frame(height: 20)
+                Divider().frame(height: 20)
                 
-                TextField("29 123-45-67", text: $phoneNumber)
+                TextField("29 123-45-67", text: $authVM.phoneNumber)
                     .keyboardType(.phonePad)
             }
             .frame(height: 50)
@@ -151,14 +118,14 @@ struct AuthView: View {
             .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
             
             HStack {
-                if isPasswordVisible {
-                    TextField("Пароль", text: $password)
+                if authVM.isPasswordVisible {
+                    TextField("Пароль", text: $authVM.password)
                 } else {
-                    SecureField("Пароль", text: $password)
+                    SecureField("Пароль", text: $authVM.password)
                 }
                 
-                Button(action: { isPasswordVisible.toggle() }) {
-                    Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
+                Button(action: { authVM.isPasswordVisible.toggle() }) {
+                    Image(systemName: authVM.isPasswordVisible ? "eye.fill" : "eye.slash.fill")
                         .foregroundColor(.gray)
                 }
             }
@@ -174,11 +141,12 @@ struct AuthView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             
             Button(action: {
-                // Если данные не заполнялись при регистрации, подставим номер
-                if currentPetProfile.ownerPhone.isEmpty {
-                    currentPetProfile.ownerPhone = "+375 " + phoneNumber
+                if profileVM.profile.ownerPhone.isEmpty {
+                    profileVM.profile.ownerPhone = "+375 " + authVM.phoneNumber
                 }
-                withAnimation { currentScreen = .mainSwipe }
+                // Подтягиваем свежий профиль из базы Firestore
+                profileVM.fetchProfileFromFirestore()
+                withAnimation { authVM.currentScreen = .mainSwipe }
             }) {
                 Text("Войти")
                     .font(.system(size: 16, weight: .bold))
@@ -192,10 +160,9 @@ struct AuthView: View {
             .padding(.top, 10)
             
             HStack {
-                Text("Впервые в PetsDate?")
-                    .foregroundColor(.gray)
+                Text("Впервые в PetsDate?").foregroundColor(.gray)
                 Button("Создать аккаунт") {
-                    withAnimation { currentScreen = .selectCity }
+                    withAnimation { authVM.currentScreen = .selectCity }
                 }
                 .fontWeight(.bold)
                 .foregroundColor(Color("AppAccent"))
@@ -209,17 +176,17 @@ struct AuthView: View {
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
     }
     
+    // MARK: - 2. Выбор города
     private var selectCityCard: some View {
         VStack(spacing: 20) {
             HStack {
-                Button(action: { withAnimation { currentScreen = .login } }) {
+                Button(action: { withAnimation { authVM.currentScreen = .login } }) {
                     Image(systemName: "chevron.left")
                         .font(.title3.weight(.bold))
                         .foregroundColor(Color("AppAccent"))
                 }
                 Spacer()
-                Text("Регистрация")
-                    .font(.system(size: 20, weight: .bold))
+                Text("Регистрация").font(.system(size: 20, weight: .bold))
                 Spacer()
             }
             
@@ -238,11 +205,9 @@ struct AuthView: View {
                 }
             }
             
-            Text("Выберите ваш город")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+            Text("Выберите ваш город").font(.subheadline).foregroundColor(.gray)
             
-            Picker("Город", selection: $selectedCity) {
+            Picker("Город", selection: $authVM.selectedCity) {
                 ForEach(belarusCities, id: \.self) { city in
                     Text(city).tag(city)
                 }
@@ -251,8 +216,7 @@ struct AuthView: View {
             .frame(height: 120)
             
             Button(action: {
-                currentPetProfile.ownerCity = selectedCity
-                withAnimation { currentScreen = .signUp }
+                withAnimation { authVM.currentScreen = .signUp }
             }) {
                 Text("Продолжить")
                     .font(.system(size: 16, weight: .bold))
@@ -264,10 +228,9 @@ struct AuthView: View {
             }
             
             HStack {
-                Text("Уже есть аккаунт?")
-                    .foregroundColor(.gray)
+                Text("Уже есть аккаунт?").foregroundColor(.gray)
                 Button("Войти") {
-                    withAnimation { currentScreen = .login }
+                    withAnimation { authVM.currentScreen = .login }
                 }
                 .fontWeight(.bold)
                 .foregroundColor(Color("AppAccent"))
@@ -280,173 +243,111 @@ struct AuthView: View {
         .shadow(color: .black.opacity(0.08), radius: 15, x: 0, y: 8)
     }
     
+    // MARK: - 3. Форма регистрации
     private var signUpCard: some View {
         VStack(spacing: 14) {
             HStack {
-                Button(action: { withAnimation { currentScreen = .selectCity } }) {
+                Button(action: { withAnimation { authVM.currentScreen = .selectCity } }) {
                     Image(systemName: "chevron.left")
                         .font(.title3.weight(.bold))
                         .foregroundColor(Color("AppAccent"))
                 }
                 Spacer()
-                Text("Создание аккаунта")
-                    .font(.system(size: 20, weight: .bold))
+                Text("Создание аккаунта").font(.system(size: 20, weight: .bold))
                 Spacer()
             }
             
-            TextField("Имя", text: $name)
-                .padding(.horizontal, 16)
-                .frame(height: 48)
-                .background(Color.white)
-                .cornerRadius(14)
-                .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
+            TextField("Имя", text: $authVM.name)
+                .padding(.horizontal, 16).frame(height: 48).background(Color.white).cornerRadius(14)
             
-            TextField("Email", text: $email)
+            TextField("Email", text: $authVM.email)
                 .keyboardType(.emailAddress)
                 .autocapitalization(.none)
-                .padding(.horizontal, 16)
-                .frame(height: 48)
-                .background(Color.white)
-                .cornerRadius(14)
-                .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
+                .padding(.horizontal, 16).frame(height: 48).background(Color.white).cornerRadius(14)
             
             HStack {
-                Text("+375")
-                    .fontWeight(.bold)
-                    .foregroundColor(.gray)
-                    .padding(.leading, 12)
-                
-                Divider()
-                    .frame(height: 20)
-                
-                TextField("29 123-45-67", text: $phoneNumber)
-                    .keyboardType(.phonePad)
+                Text("+375").fontWeight(.bold).foregroundColor(.gray).padding(.leading, 12)
+                Divider().frame(height: 20)
+                TextField("29 123-45-67", text: $authVM.phoneNumber).keyboardType(.phonePad)
             }
-            .frame(height: 48)
-            .background(Color.white)
-            .cornerRadius(14)
-            .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
+            .frame(height: 48).background(Color.white).cornerRadius(14)
             
             HStack {
-                if isPasswordVisible {
-                    TextField("Пароль", text: $password)
+                if authVM.isPasswordVisible {
+                    TextField("Пароль", text: $authVM.password)
                 } else {
-                    SecureField("Пароль", text: $password)
+                    SecureField("Пароль", text: $authVM.password)
                 }
-                
-                Button(action: { isPasswordVisible.toggle() }) {
-                    Image(systemName: isPasswordVisible ? "eye.fill" : "eye.slash.fill")
-                        .foregroundColor(.gray)
+                Button(action: { authVM.isPasswordVisible.toggle() }) {
+                    Image(systemName: authVM.isPasswordVisible ? "eye.fill" : "eye.slash.fill").foregroundColor(.gray)
                 }
             }
-            .padding(.horizontal, 16)
-            .frame(height: 48)
-            .background(Color.white)
-            .cornerRadius(14)
-            .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
+            .padding(.horizontal, 16).frame(height: 48).background(Color.white).cornerRadius(14)
             
             VStack(spacing: 6) {
                 HStack {
-                    validationItem(isMet: isMinLength, text: "Не менее 8 символов")
+                    validationItem(isMet: authVM.isMinLength, text: "Не менее 8 символов")
                     Spacer()
-                    validationItem(isMet: hasUppercase, text: "Заглавная буква")
+                    validationItem(isMet: authVM.hasUppercase, text: "Заглавная буква")
                 }
                 HStack {
-                    validationItem(isMet: hasNumberOrSymbol, text: "Цифра или символ")
+                    validationItem(isMet: authVM.hasNumberOrSymbol, text: "Цифра или символ")
                     Spacer()
-                    validationItem(isMet: hasLowercase, text: "Строчная буква")
+                    validationItem(isMet: authVM.hasLowercase, text: "Строчная буква")
                 }
             }
             .padding(.horizontal, 4)
-            .padding(.vertical, 2)
             
             HStack {
-                if isConfirmPasswordVisible {
-                    TextField("Повторите пароль", text: $confirmPassword)
+                if authVM.isConfirmPasswordVisible {
+                    TextField("Повторите пароль", text: $authVM.confirmPassword)
                 } else {
-                    SecureField("Повторите пароль", text: $confirmPassword)
+                    SecureField("Повторите пароль", text: $authVM.confirmPassword)
                 }
-                
-                if !confirmPassword.isEmpty {
-                    Image(systemName: isPasswordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundColor(isPasswordsMatch ? .green : .red)
+                if !authVM.confirmPassword.isEmpty {
+                    Image(systemName: authVM.isPasswordsMatch ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundColor(authVM.isPasswordsMatch ? .green : .red)
                 }
-                
-                Button(action: { isConfirmPasswordVisible.toggle() }) {
-                    Image(systemName: isConfirmPasswordVisible ? "eye.fill" : "eye.slash.fill")
-                        .foregroundColor(.gray)
+                Button(action: { authVM.isConfirmPasswordVisible.toggle() }) {
+                    Image(systemName: authVM.isConfirmPasswordVisible ? "eye.fill" : "eye.slash.fill").foregroundColor(.gray)
                 }
             }
-            .padding(.horizontal, 16)
-            .frame(height: 48)
-            .background(Color.white)
-            .cornerRadius(14)
-            .shadow(color: .black.opacity(0.04), radius: 5, x: 0, y: 2)
+            .padding(.horizontal, 16).frame(height: 48).background(Color.white).cornerRadius(14)
             
             HStack(alignment: .top, spacing: 10) {
-                Button(action: { isAgreed.toggle() }) {
-                    Image(systemName: isAgreed ? "checkmark.square.fill" : "square")
-                        .foregroundColor(isAgreed ? Color("AppAccent") : .gray)
+                Button(action: { authVM.isAgreed.toggle() }) {
+                    Image(systemName: authVM.isAgreed ? "checkmark.square.fill" : "square")
+                        .foregroundColor(authVM.isAgreed ? Color("AppAccent") : .gray)
                         .font(.system(size: 20))
                 }
-                
                 Text("Я согласен с Условиями использования и Политикой конфиденциальности")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                    .font(.caption).foregroundColor(.gray)
             }
-            .padding(.vertical, 2)
             
-            if !authErrorMessage.isEmpty {
-                Text(authErrorMessage)
-                    .font(.caption)
-                    .foregroundColor(.red)
-                    .multilineTextAlignment(.center)
+            if !authVM.authErrorMessage.isEmpty {
+                Text(authVM.authErrorMessage)
+                    .font(.caption).foregroundColor(.red).multilineTextAlignment(.center)
             }
             
             Button(action: {
-                authErrorMessage = ""
-                
-                // Фиксируем данные владельца в профиль
-                currentPetProfile.ownerName = name
-                currentPetProfile.ownerEmail = email
-                currentPetProfile.ownerPhone = "+375 " + phoneNumber
-                currentPetProfile.ownerCity = selectedCity
-                
-                Auth.auth().createUser(withEmail: email, password: password) { result, error in
-                    if let error = error {
-                        authErrorMessage = error.localizedDescription
-                        print("Ошибка Firebase: \(error.localizedDescription)")
-                        return
-                    }
-                    
-                    Auth.auth().currentUser?.sendEmailVerification { error in
-                        if let error = error {
-                            authErrorMessage = error.localizedDescription
-                        } else {
-                            startOTPTimer()
-                            withAnimation { currentScreen = .verifyOTP }
-                        }
-                    }
-                }
+                authVM.registerUserInfo(profileVM: profileVM)
             }) {
                 Text("Зарегистрироваться")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .background(canSignUp ? Color("AppAccent") : Color.gray.opacity(0.4))
+                    .background(authVM.canSignUp && authVM.isAgreed ? Color("AppAccent") : Color.gray.opacity(0.4))
                     .cornerRadius(26)
             }
-            .disabled(!canSignUp)
+            .disabled(!authVM.canSignUp || !authVM.isAgreed)
             
             HStack {
-                Text("Уже есть аккаунт?")
-                    .foregroundColor(.gray)
+                Text("Уже есть аккаунт?").foregroundColor(.gray)
                 Button("Войти") {
-                    withAnimation { currentScreen = .login }
+                    withAnimation { authVM.currentScreen = .login }
                 }
-                .fontWeight(.bold)
-                .foregroundColor(Color("AppAccent"))
+                .fontWeight(.bold).foregroundColor(Color("AppAccent"))
             }
             .font(.subheadline)
         }
@@ -461,21 +362,15 @@ struct AuthView: View {
             Image(systemName: isMet ? "checkmark" : "xmark")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundColor(isMet ? .green : .gray.opacity(0.6))
-            
-            Text(text)
-                .font(.system(size: 12))
-                .foregroundColor(isMet ? .black.opacity(0.8) : .gray)
+            Text(text).font(.system(size: 12)).foregroundColor(isMet ? .black.opacity(0.8) : .gray)
         }
     }
     
-    private var canSignUp: Bool {
-        !name.isEmpty && !email.isEmpty && !phoneNumber.isEmpty && isPasswordValid && isPasswordsMatch && isAgreed
-    }
-    
+    // MARK: - 4. OTP / Верификация Email с реальной проверкой
     private var otpCard: some View {
         VStack(spacing: 20) {
             HStack {
-                Button(action: { withAnimation { currentScreen = .signUp } }) {
+                Button(action: { withAnimation { authVM.currentScreen = .signUp } }) {
                     Image(systemName: "chevron.left")
                         .font(.title3.weight(.bold))
                         .foregroundColor(Color("AppAccent"))
@@ -487,28 +382,27 @@ struct AuthView: View {
                 .font(.system(size: 26, weight: .bold))
                 .foregroundColor(.black.opacity(0.85))
             
-            Text("Мы отправили ссылку для подтверждения на ваш email:\n\(email)")
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
+            Text("Мы отправили ссылку для подтверждения на ваш email:\n\(authVM.email)")
+                .font(.subheadline).foregroundColor(.gray).multilineTextAlignment(.center)
             
             Button("Изменить Email") {
-                withAnimation { currentScreen = .signUp }
+                withAnimation { authVM.currentScreen = .signUp }
             }
-            .font(.footnote)
-            .fontWeight(.bold)
-            .foregroundColor(Color("AppAccent"))
+            .font(.footnote).fontWeight(.bold).foregroundColor(Color("AppAccent"))
             
             Image(systemName: "envelope.badge.shield.half.filled")
-                .font(.system(size: 60))
-                .foregroundColor(Color("AppAccent"))
-                .padding(.vertical, 10)
+                .font(.system(size: 60)).foregroundColor(Color("AppAccent")).padding(.vertical, 10)
+            
+            if !authVM.authErrorMessage.isEmpty {
+                Text(authVM.authErrorMessage)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
             
             if timeRemaining > 0 {
                 Text(String(format: "Повторная отправка через 00:%02d сек", timeRemaining))
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.gray)
+                    .font(.system(size: 14, weight: .medium)).foregroundColor(.gray)
                     .task {
                         while timeRemaining > 0 && timerActive {
                             try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -518,28 +412,33 @@ struct AuthView: View {
             } else {
                 Button("Отправить письмо повторно") {
                     Auth.auth().currentUser?.sendEmailVerification { error in
-                        if error == nil {
-                            startOTPTimer()
-                        }
+                        if error == nil { startOTPTimer() }
                     }
                 }
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(Color("AppAccent"))
+                .font(.system(size: 14, weight: .bold)).foregroundColor(Color("AppAccent"))
             }
             
             Button(action: {
-                withAnimation {
-                    currentScreen = .createProfile
+                // Проверяем подтверждение перед переходом
+                authVM.checkEmailVerification {
+                    withAnimation { authVM.currentScreen = .createProfile }
                 }
             }) {
-                Text("Перейти к созданию профиля")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(Color("AppAccent"))
-                    .cornerRadius(26)
+                HStack(spacing: 8) {
+                    if authVM.isLoading {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Перейти к созданию профиля")
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(Color("AppAccent"))
+                .cornerRadius(26)
             }
+            .disabled(authVM.isLoading)
             .padding(.top, 10)
         }
         .padding(24)
